@@ -1,0 +1,54 @@
+.grid{
+  background-color: white;
+  height: auto;
+  border-radius: 10px;
+  margin-top: 18px;
+  border: 1px solid rgba(192, 191, 191, 0.438);
+  
+}
+
+
+
+.header{
+  border: 0.3px solid rgba(192, 191, 191, 0.438);
+  padding: 20px;
+  font-size: 20px;
+  font-weight: bold;
+  background-color: rgba(216, 232, 248, 0.901);
+  border-radius: 5px 5px 0px 0px;
+}
+
+.grid-2{
+  display: flex;
+ gap: 10px;
+  margin-top: 20px;
+  height: 300px;
+
+}
+
+.mwh{
+  background-color: white;
+  width: 50%;
+  border-radius: 5px;
+  border: 0.3px solid rgba(192, 191, 191, 0.438);
+ 
+ 
+
+}
+
+.grid-3{
+  background-color: white;
+  width: 50%;
+
+  border-radius: 5px;
+  border: 0.3px solid rgba(192, 191, 191, 0.438);
+}
+
+.header-2{
+  border: 0.3px solid rgba(192, 191, 191, 0.438);
+  padding: 20px;
+  font-size: 20px;
+  background-color: rgba(216, 232, 248, 0.901);
+  border-radius: 5px 5px 0px 0px;
+   font-weight: bold;
+}
