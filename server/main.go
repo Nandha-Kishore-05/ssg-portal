@@ -15,6 +15,45 @@
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 // 	"github.com/gin-contrib/cors"
 // 	"github.com/gin-gonic/gin"
@@ -193,5 +232,6 @@ func main() {
 	// Define route for saved timetable (if needed)
 	r.POST("/timetable/save", timetables.SaveTimetable)
 	r.GET("/timetable/saved/:departmentID", timetables.GetTimetable)
+	r.GET("/timetable/faculty/:faculty_name", timetables.FacultyTimetable)
 	r.Run(":8080")
 }

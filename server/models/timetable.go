@@ -56,3 +56,9 @@ type Department struct {
 	ID         int    `json:"id"`
 	Department string `json:"name"`
 }
+type FacultyTimetableEntry struct {
+	DayName   string `json:"day_name"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+	Classroom string `json:"classroom"`
+}

@@ -18,7 +18,19 @@ function SideBar(props) {
         id: 2,
         icon: <DashboardRounded />,
         label: "TimeTable",
-        path: "/timetable/1",
+        path: "/timetable/:departmentID",
+      },
+      {
+        id: 3,
+        icon: <DashboardRounded />,
+        label: "VenueTable",
+        path: "/timetable/saved/:departmentID",
+      },
+      {
+        id: 4,
+        icon: <DashboardRounded />,
+        label: "FacultyTable",
+        path: "/timetable/faculty/:facultyName",
       },
     
 
