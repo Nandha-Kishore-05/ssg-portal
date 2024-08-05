@@ -1,6 +1,7 @@
 import Dashboard from "../pages/dashboard/dashboard";
-import Workload from "../pages/workload/workload";
+import Timetable from "../pages/workload/workload";
 
+import SavedTimetable from "../pages/workload/timetable";
 
 
 
@@ -12,7 +13,11 @@ const routes = [
   },
   {
     path: "/timetable/:departmentID",
-    element: <Workload />,
+    element: <Timetable />,
+  },
+  {
+    path: "/timetable/saved/:departmentID",
+    element: <SavedTimetable />,
   },
  
 ];

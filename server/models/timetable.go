@@ -16,6 +16,7 @@ type Subject struct {
 	Name         string `json:"name"`
 	DepartmentID int    `json:"department_id"`
 	LabCourse    int    `json:"lab_course"`
+	Status       int    `json:"status"`
 }
 
 type Faculty struct {
@@ -35,18 +36,26 @@ type FacultySubject struct {
 	SubjectID int `json:"subject_id"`
 }
 type TimetableEntry struct {
-	Day       string `json:"day_name"` // Use DayName for consistency
-	StartTime string `json:"start_time"`
-	EndTime   string `json:"end_time"`
-	Subject   string `json:"subject_name"` // Use Subject for consistency
-	Faculty   string `json:"faculty_name"` // Use Faculty for consistency
-	Classroom string `json:"classroom"`
+	DayName      string `json:"day_name"`
+	StartTime    string `json:"start_time"`
+	EndTime      string `json:"end_time"`
+	SubjectName  string `json:"subject_name"`
+	FacultyName  string `json:"faculty_name"`
+	Classroom    string `json:"classroom"`
+	DepartmentID int    `json:"department_id"`
+	SubjectID    int    `json:"subject_id"`
+	FacultyID    int    `json:"faculty_id"`
 }
 type Class struct {
-	Day         string `json:"day_name"`
-	StartTime   string `json:"start_time"`
-	EndTime     string `json:"end_time"`
-	SubjectName string `json:"subject_name"`
-	FacultyName string `json:"faculty_name"`
-	Classroom   string `json:"classroom"`
+	Day          string `json:"day_name"`
+	StartTime    string `json:"start_time"`
+	EndTime      string `json:"end_time"`
+	SubjectName  string `json:"subject_name"`
+	FacultyName  string `json:"faculty_name"`
+	Classroom    string `json:"classroom"`
+	DepartmentID int    `json:"department_id"`
+}
+type Department struct {
+	ID         int    `json:"id"`
+	Department string `json:"name"`
 }

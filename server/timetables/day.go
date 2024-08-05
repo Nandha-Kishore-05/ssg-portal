@@ -9,7 +9,7 @@ import (
 
 func GetAvailableDays() ([]models.Day, error) {
 	var days []models.Day
-	rows, err := config.Database.Query("SELECT id, day_name FROM days")
+	rows, err := config.Database.Query("SELECT id, day_name FROM days ORDER BY id ASC")
 	if err != nil {
 		return nil, fmt.Errorf("error querying days: %v", err)
 	}
