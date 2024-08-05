@@ -36,15 +36,12 @@ type FacultySubject struct {
 	SubjectID int `json:"subject_id"`
 }
 type TimetableEntry struct {
-	DayName      string `json:"day_name"`
-	StartTime    string `json:"start_time"`
-	EndTime      string `json:"end_time"`
-	SubjectName  string `json:"subject_name"`
-	FacultyName  string `json:"faculty_name"`
-	Classroom    string `json:"classroom"`
-	DepartmentID int    `json:"department_id"`
-	SubjectID    int    `json:"subject_id"`
-	FacultyID    int    `json:"faculty_id"`
+	DayName     string `json:"day_name"`
+	StartTime   string `json:"start_time"`
+	EndTime     string `json:"end_time"`
+	SubjectName string `json:"subject_name"`
+	FacultyName string `json:"faculty_name"`
+	Classroom   string `json:"classroom"`
 }
 type Class struct {
 	Day          string `json:"day_name"`

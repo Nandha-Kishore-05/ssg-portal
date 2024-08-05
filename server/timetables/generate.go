@@ -1,295 +1,3 @@
-// package timetables
-
-// import (
-// 	"fmt"
-// 	"math/rand"
-// 	"time"
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
-// 	"ssg-portal/config"
-// 	"ssg-portal/models"
-
-// )
-
-// // Define the FacultyBasedTimetable type
-// type FacultyBasedTimetable map[string]map[string][]models.TimetableEntry
-
-// // GenerateTimetable generates a timetable based on the provided days, hours, subjects, faculty, classrooms, and faculty-subject mappings.
-// func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject) FacultyBasedTimetable {
-// 	var timetable FacultyBasedTimetable
-// 	var validTimetable bool
-
-// 	// Seed the random number generator to ensure different random selections on each run.
-// 	rand.Seed(time.Now().UnixNano())
-
-// 	// Fetch existing timetable from the database.
-// 	existingTimetable, err := FetchExistingTimetable()
-// 	if err != nil {
-// 		fmt.Println("Error fetching existing timetable:", err)
-// 		return nil
-// 	}
-
-// 	for !validTimetable {
-// 		// Initialize the timetable map to store classes for each faculty and day.
-// 		timetable = make(FacultyBasedTimetable)
-// 		// Map to track the number of periods assigned to each faculty.
-// 		facultyHours := make(map[int]int)
-
-// 		// Create maps to link subject IDs to names, faculty IDs to names, and faculty IDs to departments.
-// 		subjectIDToName := make(map[int]string)
-// 		facultyIDToName := make(map[int]string)
-// 		facultyIDToDepartment := make(map[int]int)
-// 		subjectToFaculty := make(map[int]int)
-
-// 		// Populate the subjectIDToName map with subject names.
-// 		for _, subject := range subjects {
-// 			subjectIDToName[subject.ID] = subject.Name
-// 		}
-
-// 		// Populate facultyIDToName and facultyIDToDepartment maps with faculty names and departments.
-// 		for _, f := range faculty {
-// 			facultyIDToName[f.ID] = f.FacultyName
-// 			facultyIDToDepartment[f.ID] = f.DepartmentID
-// 		}
-
-// 		// Populate subjectToFaculty map with the faculty assigned to each subject.
-// 		for _, fs := range facultySubjects {
-// 			subjectToFaculty[fs.SubjectID] = fs.FacultyID
-// 		}
-
-// 		// Initialize facultyAssignments to track periods assigned to each faculty for each day.
-// 		facultyAssignments := make(map[int]map[string]map[string]bool)
-// 		// Initialize periodsAssigned to track periods used for each day.
-// 		periodsAssigned := make(map[string]map[string]bool)
-// 		// Initialize assignedSubjects to track subjects assigned for each day.
-// 		assignedSubjects := make(map[string]map[int]bool)
-
-// 		// Set up the facultyAssignments, periodsAssigned, and assignedSubjects maps for each faculty and day.
-// 		for _, f := range faculty {
-// 			facultyAssignments[f.ID] = make(map[string]map[string]bool)
-// 			for _, day := range days {
-// 				facultyAssignments[f.ID][day.DayName] = make(map[string]bool)
-// 				assignedSubjects[day.DayName] = make(map[int]bool) // Track subjects assigned for the day
-// 			}
-// 		}
-
-// 		for _, day := range days {
-// 			// Initialize used periods for the current day to ensure periods are unique.
-// 			periodsAssigned[day.DayName] = make(map[string]bool)
-
-// 			for _, hour := range hours {
-// 				// Create a unique key for the current period based on start and end times.
-// 				periodKey := fmt.Sprintf("%s-%s", hour.StartTime, hour.EndTime)
-
-// 				// Skip if this period has already been assigned for the day.
-// 				if periodsAssigned[day.DayName][periodKey] {
-// 					continue
-// 				}
-// 				// Mark the period as used for the current day.
-// 				periodsAssigned[day.DayName][periodKey] = true
-
-// 				var subject models.Subject
-// 				for {
-// 					// Randomly select a subject.
-// 					subjectIndex := rand.Intn(len(subjects))
-// 					subject = subjects[subjectIndex]
-// 					// Check if the subject has already been assigned for this day.
-// 					if assignedSubjects[day.DayName][subject.ID] {
-// 						continue
-// 					}
-// 					// Get the faculty assigned to this subject.
-// 					facultyID, facultyAssigned := subjectToFaculty[subject.ID]
-// 					// Check if the faculty is assigned and if the period has not been assigned to this faculty yet.
-// 					if facultyAssigned {
-// 						if !facultyAssignments[facultyID][day.DayName][periodKey] {
-// 							// Check if the faculty has fewer than 6 periods assigned.
-// 							if facultyHours[facultyID] < 6 {
-// 								break
-// 							}
-// 						} else {
-// 							// If the period is already assigned to the selected faculty, try another faculty.
-// 							facultyID = findAlternativeFaculty(subject.ID, day.DayName, periodKey, faculty, facultyAssignments, facultyHours, subjectToFaculty)
-// 							if facultyID == -1 {
-// 								// No alternative faculty found; break out of the loop to try a different subject.
-// 								break
-// 							}
-// 							break
-// 						}
-// 					}
-// 				}
-
-// 				facultyID, exists := subjectToFaculty[subject.ID]
-// 				if !exists {
-// 					// Skip if no faculty is assigned to this subject.
-// 					continue
-// 				}
-
-// 				// Initialize the facultyAssignments map for the faculty and day if not already initialized.
-// 				if _, ok := facultyAssignments[facultyID][day.DayName]; !ok {
-// 					facultyAssignments[facultyID][day.DayName] = make(map[string]bool)
-// 				}
-
-// 				// Skip if the period is already assigned to this faculty on this day.
-// 				if facultyAssignments[facultyID][day.DayName][periodKey] {
-// 					continue
-// 				}
-
-// 				for _, classroom := range classrooms {
-// 					// Create a new timetable entry.
-// 					entry := models.TimetableEntry{
-// 						DayName:      day.DayName,
-// 						StartTime:    hour.StartTime,
-// 						EndTime:      hour.EndTime,
-// 						SubjectName:  subjectIDToName[subject.ID],
-// 						FacultyName:  facultyIDToName[facultyID],
-// 						Classroom:    classroom.ClassroomName,
-// 						DepartmentID: facultyIDToDepartment[facultyID],
-// 					}
-
-// 					// Initialize the timetable map for the faculty if not already initialized.
-// 					if _, ok := timetable[facultyIDToName[facultyID]]; !ok {
-// 						timetable[facultyIDToName[facultyID]] = make(map[string][]models.TimetableEntry)
-// 					}
-// 					// Add the entry to the timetable for the faculty and day.
-// 					timetable[facultyIDToName[facultyID]][day.DayName] = append(timetable[facultyIDToName[facultyID]][day.DayName], entry)
-
-// 					// Increment the count of periods assigned to the faculty.
-// 					facultyHours[facultyID]++
-// 					// Mark the period as assigned to this faculty for the day.
-// 					facultyAssignments[facultyID][day.DayName][periodKey] = true
-// 					// Mark the subject as assigned for the day.
-// 					assignedSubjects[day.DayName][subject.ID] = true
-
-// 					// Break out of the loop after successfully assigning a subject to this period.
-// 					break
-// 				}
-// 			}
-// 		}
-
-// 		// Validate the timetable to check for conflicts.
-// 		validTimetable = !CheckTimetableConflicts(timetable, existingTimetable)
-// 	}
-
-// 	return timetable
-// }
-
-// // findAlternativeFaculty finds an alternative faculty member for the given subject, day, and period.
-// func findAlternativeFaculty(subjectID int, dayName, periodKey string, faculty []models.Faculty, facultyAssignments map[int]map[string]map[string]bool, facultyHours map[int]int, subjectToFaculty map[int]int) int {
-// 	for _, f := range faculty {
-// 		if _, ok := facultyAssignments[f.ID][dayName]; !ok {
-// 			facultyAssignments[f.ID][dayName] = make(map[string]bool)
-// 		}
-// 		if !facultyAssignments[f.ID][dayName][periodKey] && facultyHours[f.ID] < 6 {
-// 			return f.ID
-// 		}
-// 	}
-// 	return -1
-// }
-
-// // CheckTimetableConflicts checks for conflicts in the generated timetable by comparing it with the existing timetable from the database.
-// func CheckTimetableConflicts(timetable FacultyBasedTimetable, existingTimetable FacultyBasedTimetable) bool {
-// 	for facultyName, days := range timetable {
-// 		for dayName, entries := range days {
-// 			for _, entry := range entries {
-// 				for _, existingEntry := range existingTimetable[facultyName][dayName] {
-// 					if entry.StartTime == existingEntry.StartTime && entry.EndTime == existingEntry.EndTime && entry.Classroom == existingEntry.Classroom {
-// 						return true // Conflict found.
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return false
-// }
-// func FetchExistingTimetable() (FacultyBasedTimetable, error) {
-// 	var timetable FacultyBasedTimetable
-
-// 	query := "SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom FROM timetable"
-// 	rows, err := config.Database.Query(query)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error fetching existing timetable: %v", err)
-// 	}
-// 	defer rows.Close()
-
-// 	// Initialize the timetable map
-// 	timetable = make(FacultyBasedTimetable)
-
-// 	for rows.Next() {
-// 		var dayName, startTime, endTime, subjectName, facultyName, classroom string
-
-// 		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom); err != nil {
-// 			return nil, fmt.Errorf("error scanning row: %v", err)
-// 		}
-
-// 		if _, ok := timetable[facultyName]; !ok {
-// 			timetable[facultyName] = make(map[string][]models.TimetableEntry)
-// 		}
-// 		entry := models.TimetableEntry{
-// 			DayName:     dayName,
-// 			StartTime:   startTime,
-// 			EndTime:     endTime,
-// 			SubjectName: subjectName,
-// 			FacultyName: facultyName,
-// 			Classroom:   classroom,
-// 		}
-// 		timetable[facultyName][dayName] = append(timetable[facultyName][dayName], entry)
-// 	}
-
-// 	if err := rows.Err(); err != nil {
-// 		return nil, fmt.Errorf("error iterating over rows: %v", err)
-// 	}
-
-//		return timetable, nil
-//	}
 package timetables
 
 import (
@@ -301,242 +9,28 @@ import (
 	"ssg-portal/models"
 )
 
-// Define the FacultyBasedTimetable type
 type FacultyBasedTimetable map[string]map[string][]models.TimetableEntry
 
-// Define the FacultyAssignment struct
-type FacultyAssignment struct {
-	FacultyID int
-	DayName   string
-	PeriodKey string
-}
-
-// GenerateTimetable generates a timetable based on the provided days, hours, subjects, faculty, classrooms, and faculty-subject mappings.
-func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject) FacultyBasedTimetable {
-	var timetable FacultyBasedTimetable
-	var validTimetable bool
-
-	// Seed the random number generator to ensure different random selections on each run.
-	rand.Seed(time.Now().UnixNano())
-
-	// Fetch existing timetable from the database.
-	existingTimetable, err := FetchExistingTimetable()
+// Function to fetch existing timetable data from the database
+func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, error) {
+	var existingTimetable map[string]map[string][]models.TimetableEntry
+	rows, err := config.Database.Query("SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom FROM timetable")
 	if err != nil {
-		fmt.Println("Error fetching existing timetable:", err)
-		return nil
-	}
-
-	for !validTimetable {
-		// Initialize the timetable map to store classes for each faculty and day.
-		timetable = make(FacultyBasedTimetable)
-		// Map to track the number of periods assigned to each faculty.
-		facultyHours := make(map[int]int)
-
-		// Create maps to link subject IDs to names, faculty IDs to names, and faculty IDs to departments.
-		subjectIDToName := make(map[int]string)
-		facultyIDToName := make(map[int]string)
-		facultyIDToDepartment := make(map[int]int)
-		subjectToFaculty := make(map[int]int)
-
-		// Populate the subjectIDToName map with subject names.
-		for _, subject := range subjects {
-			subjectIDToName[subject.ID] = subject.Name
-		}
-
-		// Populate facultyIDToName and facultyIDToDepartment maps with faculty names and departments.
-		for _, f := range faculty {
-			facultyIDToName[f.ID] = f.FacultyName
-			facultyIDToDepartment[f.ID] = f.DepartmentID
-		}
-
-		// Populate subjectToFaculty map with the faculty assigned to each subject.
-		for _, fs := range facultySubjects {
-			subjectToFaculty[fs.SubjectID] = fs.FacultyID
-		}
-
-		// Initialize facultyAssignments to track periods assigned to each faculty for each day.
-		facultyAssignments := make(map[int]map[string]map[string]bool)
-		// Initialize periodsAssigned to track periods used for each day.
-		periodsAssigned := make(map[string]map[string]bool)
-		// Initialize assignedSubjects to track subjects assigned for each day.
-		assignedSubjects := make(map[string]map[int]bool)
-
-		// Initialize 2D array for faculty assignment tracking.
-		facultyAssignmentMatrix := make(map[int]map[string]map[string]bool)
-		for _, f := range faculty {
-			facultyAssignmentMatrix[f.ID] = make(map[string]map[string]bool)
-			for _, day := range days {
-				facultyAssignmentMatrix[f.ID][day.DayName] = make(map[string]bool)
-			}
-		}
-
-		// Set up the facultyAssignments, periodsAssigned, and assignedSubjects maps for each faculty and day.
-		for _, f := range faculty {
-			facultyAssignments[f.ID] = make(map[string]map[string]bool)
-			for _, day := range days {
-				facultyAssignments[f.ID][day.DayName] = make(map[string]bool)
-				assignedSubjects[day.DayName] = make(map[int]bool) // Track subjects assigned for the day
-			}
-		}
-
-		for _, day := range days {
-			// Initialize used periods for the current day to ensure periods are unique.
-			periodsAssigned[day.DayName] = make(map[string]bool)
-
-			for _, hour := range hours {
-				// Create a unique key for the current period based on start and end times.
-				periodKey := fmt.Sprintf("%s-%s", hour.StartTime, hour.EndTime)
-
-				// Skip if this period has already been assigned for the day.
-				if periodsAssigned[day.DayName][periodKey] {
-					continue
-				}
-				// Mark the period as used for the current day.
-				periodsAssigned[day.DayName][periodKey] = true
-
-				var subject models.Subject
-				for {
-					// Randomly select a subject.
-					subjectIndex := rand.Intn(len(subjects))
-					subject = subjects[subjectIndex]
-					// Check if the subject has already been assigned for this day.
-					if assignedSubjects[day.DayName][subject.ID] {
-						continue
-					}
-					// Get the faculty assigned to this subject.
-					facultyID, facultyAssigned := subjectToFaculty[subject.ID]
-					// Check if the faculty is assigned and if the period has not been assigned to this faculty yet.
-					if facultyAssigned {
-						if !facultyAssignmentMatrix[facultyID][day.DayName][periodKey] {
-							// Check if the faculty has fewer than 6 periods assigned.
-							if facultyHours[facultyID] < 6 {
-								break
-							}
-						} else {
-							// If the period is already assigned to the selected faculty, try another faculty.
-							facultyID = findAlternativeFaculty(subject.ID, day.DayName, periodKey, faculty, facultyAssignments, facultyHours, subjectToFaculty)
-							if facultyID == -1 {
-								// No alternative faculty found; break out of the loop to try a different subject.
-								break
-							}
-							break
-						}
-					}
-				}
-
-				facultyID, exists := subjectToFaculty[subject.ID]
-				if !exists {
-					// Skip if no faculty is assigned to this subject.
-					continue
-				}
-
-				// Initialize the facultyAssignments map for the faculty if not already initialized.
-				if _, ok := facultyAssignments[facultyID][day.DayName]; !ok {
-					facultyAssignments[facultyID][day.DayName] = make(map[string]bool)
-				}
-
-				// Skip if the period is already assigned to this faculty on this day.
-				if facultyAssignments[facultyID][day.DayName][periodKey] {
-					continue
-				}
-
-				for _, classroom := range classrooms {
-					// Create a new timetable entry.
-					entry := models.TimetableEntry{
-						DayName:      day.DayName,
-						StartTime:    hour.StartTime,
-						EndTime:      hour.EndTime,
-						SubjectName:  subjectIDToName[subject.ID],
-						FacultyName:  facultyIDToName[facultyID],
-						Classroom:    classroom.ClassroomName,
-						DepartmentID: facultyIDToDepartment[facultyID],
-					}
-
-					// Initialize the timetable map for the faculty if not already initialized.
-					if _, ok := timetable[facultyIDToName[facultyID]]; !ok {
-						timetable[facultyIDToName[facultyID]] = make(map[string][]models.TimetableEntry)
-					}
-					// Add the entry to the timetable for the faculty and day.
-					timetable[facultyIDToName[facultyID]][day.DayName] = append(timetable[facultyIDToName[facultyID]][day.DayName], entry)
-
-					// Increment the count of periods assigned to the faculty.
-					facultyHours[facultyID]++
-					// Mark the period as assigned to this faculty for the day.
-					facultyAssignments[facultyID][day.DayName][periodKey] = true
-					// Mark the subject as assigned for the day.
-					assignedSubjects[day.DayName][subject.ID] = true
-					// Mark the period as assigned in the matrix
-					facultyAssignmentMatrix[facultyID][day.DayName][periodKey] = true
-
-					// Break out of the loop after successfully assigning a subject to this period.
-					break
-				}
-			}
-		}
-
-		// Validate the timetable to check for conflicts.
-		validTimetable = !CheckTimetableConflicts(timetable, existingTimetable)
-	}
-
-	return timetable
-}
-
-// findAlternativeFaculty finds an alternative faculty member for the given subject, day, and period.
-func findAlternativeFaculty(subjectID int, dayName, periodKey string, faculty []models.Faculty, facultyAssignments map[int]map[string]map[string]bool, facultyHours map[int]int, subjectToFaculty map[int]int) int {
-	for _, f := range faculty {
-		if _, ok := facultyAssignments[f.ID][dayName]; !ok {
-			facultyAssignments[f.ID][dayName] = make(map[string]bool)
-		}
-		if !facultyAssignments[f.ID][dayName][periodKey] && facultyHours[f.ID] < 6 {
-			return f.ID
-		}
-	}
-	return -1
-}
-
-// CheckTimetableConflicts checks for conflicts in the generated timetable by comparing it with the existing timetable from the database.
-func CheckTimetableConflicts(timetable FacultyBasedTimetable, existingTimetable FacultyBasedTimetable) bool {
-	// Implement conflict checking logic here.
-	for facultyName, days := range timetable {
-		for dayName, entries := range days {
-			for _, entry := range entries {
-				for _, existingEntry := range existingTimetable[facultyName][dayName] {
-					if entry.StartTime == existingEntry.StartTime && entry.EndTime == existingEntry.EndTime && entry.Classroom == existingEntry.Classroom {
-						return true // Conflict found.
-					}
-				}
-			}
-		}
-	}
-	return false
-}
-
-// FetchExistingTimetable fetches the existing timetable from the database.
-func FetchExistingTimetable() (FacultyBasedTimetable, error) {
-	// Implement fetching logic here.
-
-	var timetable FacultyBasedTimetable
-
-	query := "SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom FROM timetable"
-	rows, err := config.Database.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching existing timetable: %v", err)
+		return nil, err
 	}
 	defer rows.Close()
 
-	// Initialize the timetable map
-	timetable = make(FacultyBasedTimetable)
-
+	existingTimetable = make(map[string]map[string][]models.TimetableEntry)
 	for rows.Next() {
 		var dayName, startTime, endTime, subjectName, facultyName, classroom string
-
-		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom); err != nil {
-			return nil, fmt.Errorf("error scanning row: %v", err)
+		err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom)
+		if err != nil {
+			return nil, err
 		}
-
-		if _, ok := timetable[facultyName]; !ok {
-			timetable[facultyName] = make(map[string][]models.TimetableEntry)
+		if _, exists := existingTimetable[dayName]; !exists {
+			existingTimetable[dayName] = make(map[string][]models.TimetableEntry)
 		}
+		periodKey := fmt.Sprintf("%s-%s", startTime, endTime)
 		entry := models.TimetableEntry{
 			DayName:     dayName,
 			StartTime:   startTime,
@@ -545,13 +39,505 @@ func FetchExistingTimetable() (FacultyBasedTimetable, error) {
 			FacultyName: facultyName,
 			Classroom:   classroom,
 		}
-
-		timetable[facultyName][dayName] = append(timetable[facultyName][dayName], entry)
+		existingTimetable[dayName][periodKey] = append(existingTimetable[dayName][periodKey], entry)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over rows: %v", err)
-	}
-
-	return nil, nil
+	return existingTimetable, nil
 }
+
+// GenerateTimetable generates a timetable based on existing entries and constraints
+func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject) FacultyBasedTimetable {
+	var timetable FacultyBasedTimetable
+	var validTimetable bool
+
+	// Seed the random number generator for randomness
+	rand.Seed(time.Now().UnixNano())
+
+	// Fetch existing timetable data
+	existingTimetable, err := FetchExistingTimetable()
+	if err != nil {
+		fmt.Println("Error fetching existing timetable:", err)
+		return nil // Return nil if there is an error fetching existing timetable
+	}
+
+	// If there is existing timetable data, try to resolve conflicts
+	if len(existingTimetable) > 0 {
+		for !validTimetable {
+			timetable = make(FacultyBasedTimetable)
+			facultyHours := make(map[int]int)
+
+			// Maps for lookup
+			subjectIDToName := make(map[int]string)
+			facultyIDToName := make(map[int]string)
+			facultyIDToDepartment := make(map[int]int)
+			subjectToFaculty := make(map[int]int)
+
+			// Populate maps with subject names and faculty information
+			for _, subject := range subjects {
+				subjectIDToName[subject.ID] = subject.Name
+			}
+
+			for _, f := range faculty {
+				facultyIDToName[f.ID] = f.FacultyName
+				facultyIDToDepartment[f.ID] = f.DepartmentID
+			}
+
+			for _, fs := range facultySubjects {
+				subjectToFaculty[fs.SubjectID] = fs.FacultyID
+			}
+
+			// Initialize maps to track assignments and periods
+			facultyAssignments := make(map[string]map[string]bool)
+			periodsAssigned := make(map[string]map[string]bool)
+			assignedSubjects := make(map[string]map[int]bool)
+			classroomPeriods := make(map[string]map[string]bool)
+
+			for _, day := range days {
+				facultyAssignments[day.DayName] = make(map[string]bool)
+				assignedSubjects[day.DayName] = make(map[int]bool)
+				classroomPeriods[day.DayName] = make(map[string]bool)
+				periodsAssigned[day.DayName] = make(map[string]bool)
+			}
+
+			// Loop through each day and hour to assign subjects and classrooms
+			for _, day := range days {
+				for _, hour := range hours {
+					periodKey := fmt.Sprintf("%s-%s", hour.StartTime, hour.EndTime)
+					if periodsAssigned[day.DayName][periodKey] {
+						continue // Skip if the period is already assigned
+					}
+					periodsAssigned[day.DayName][periodKey] = true
+
+					var subject models.Subject
+					for {
+						subjectIndex := rand.Intn(len(subjects))
+						subject = subjects[subjectIndex]
+						if assignedSubjects[day.DayName][subject.ID] {
+							continue // Skip if the subject is already assigned for the day
+						}
+						facultyID, facultyAssigned := subjectToFaculty[subject.ID]
+						if facultyAssigned {
+							if facultyHours[facultyID] < 6 {
+								break // Break loop if faculty hours are less than 6
+							}
+						}
+					}
+
+					facultyID, exists := subjectToFaculty[subject.ID]
+					if !exists {
+						continue // Skip if no faculty assigned for the subject
+					}
+
+					if _, ok := facultyAssignments[day.DayName]; !ok {
+						facultyAssignments[day.DayName] = make(map[string]bool)
+					}
+
+					if facultyAssignments[day.DayName][periodKey] {
+						continue // Skip if the faculty is already assigned for the period
+					}
+
+					assigned := false
+					for _, classroom := range classrooms {
+						if classroomPeriods[day.DayName][periodKey] {
+							continue // Skip if the period is already assigned to a classroom
+						}
+
+						if !IsPeriodAvailable(existingTimetable, day.DayName, periodKey, facultyIDToName[facultyID]) {
+							continue // Skip if the period is not available for the faculty
+						}
+
+						entry := models.TimetableEntry{
+							DayName:     day.DayName,
+							StartTime:   hour.StartTime,
+							EndTime:     hour.EndTime,
+							SubjectName: subjectIDToName[subject.ID],
+							FacultyName: facultyIDToName[facultyID],
+							Classroom:   classroom.ClassroomName,
+						}
+
+						if _, ok := timetable[facultyIDToName[facultyID]]; !ok {
+							timetable[facultyIDToName[facultyID]] = make(map[string][]models.TimetableEntry)
+						}
+						timetable[facultyIDToName[facultyID]][day.DayName] = append(timetable[facultyIDToName[facultyID]][day.DayName], entry)
+
+						facultyHours[facultyID]++
+						facultyAssignments[day.DayName][periodKey] = true
+						assignedSubjects[day.DayName][subject.ID] = true
+						classroomPeriods[day.DayName][periodKey] = true
+
+						assigned = true
+						break // Break loop once a classroom is assigned
+					}
+
+					if !assigned {
+						continue // Skip to the next period if no classroom was assigned
+					}
+				}
+			}
+
+			// Check if the generated timetable conflicts with existing timetable
+			validTimetable = !CheckTimetableConflicts(timetable, existingTimetable)
+		}
+	} else {
+		// If no existing timetable, generate a new timetable
+		for !validTimetable {
+			timetable = make(FacultyBasedTimetable)
+			facultyHours := make(map[int]int)
+
+			// Maps for lookup
+			subjectIDToName := make(map[int]string)
+			facultyIDToName := make(map[int]string)
+			facultyIDToDepartment := make(map[int]int)
+			subjectToFaculty := make(map[int]int)
+
+			// Populate maps with subject names and faculty information
+			for _, subject := range subjects {
+				subjectIDToName[subject.ID] = subject.Name
+			}
+
+			for _, f := range faculty {
+				facultyIDToName[f.ID] = f.FacultyName
+				facultyIDToDepartment[f.ID] = f.DepartmentID
+			}
+
+			for _, fs := range facultySubjects {
+				subjectToFaculty[fs.SubjectID] = fs.FacultyID
+			}
+
+			// Initialize maps to track assignments and periods
+			facultyAssignments := make(map[string]map[string]bool)
+			periodsAssigned := make(map[string]map[string]bool)
+			assignedSubjects := make(map[string]map[int]bool)
+			classroomPeriods := make(map[string]map[string]bool)
+
+			for _, day := range days {
+				facultyAssignments[day.DayName] = make(map[string]bool)
+				assignedSubjects[day.DayName] = make(map[int]bool)
+				classroomPeriods[day.DayName] = make(map[string]bool)
+				periodsAssigned[day.DayName] = make(map[string]bool)
+			}
+
+			// Loop through each day and hour to assign subjects and classrooms
+			for _, day := range days {
+				for _, hour := range hours {
+					periodKey := fmt.Sprintf("%s-%s", hour.StartTime, hour.EndTime)
+					if periodsAssigned[day.DayName][periodKey] {
+						continue // Skip if the period is already assigned
+					}
+					periodsAssigned[day.DayName][periodKey] = true
+
+					var subject models.Subject
+					for {
+						subjectIndex := rand.Intn(len(subjects))
+						subject = subjects[subjectIndex]
+						if assignedSubjects[day.DayName][subject.ID] {
+							continue // Skip if the subject is already assigned for the day
+						}
+						facultyID, facultyAssigned := subjectToFaculty[subject.ID]
+						if facultyAssigned {
+							if facultyHours[facultyID] < 6 {
+								break // Break loop if faculty hours are less than 6
+							}
+						}
+					}
+
+					facultyID, exists := subjectToFaculty[subject.ID]
+					if !exists {
+						continue // Skip if no faculty assigned for the subject
+					}
+
+					if _, ok := facultyAssignments[day.DayName]; !ok {
+						facultyAssignments[day.DayName] = make(map[string]bool)
+					}
+
+					if facultyAssignments[day.DayName][periodKey] {
+						continue // Skip if the faculty is already assigned for the period
+					}
+
+					assigned := false
+					for _, classroom := range classrooms {
+						if classroomPeriods[day.DayName][periodKey] {
+							continue // Skip if the period is already assigned to a classroom
+						}
+
+						entry := models.TimetableEntry{
+							DayName:     day.DayName,
+							StartTime:   hour.StartTime,
+							EndTime:     hour.EndTime,
+							SubjectName: subjectIDToName[subject.ID],
+							FacultyName: facultyIDToName[facultyID],
+							Classroom:   classroom.ClassroomName,
+						}
+
+						if _, ok := timetable[facultyIDToName[facultyID]]; !ok {
+							timetable[facultyIDToName[facultyID]] = make(map[string][]models.TimetableEntry)
+						}
+						timetable[facultyIDToName[facultyID]][day.DayName] = append(timetable[facultyIDToName[facultyID]][day.DayName], entry)
+
+						facultyHours[facultyID]++
+						facultyAssignments[day.DayName][periodKey] = true
+						assignedSubjects[day.DayName][subject.ID] = true
+						classroomPeriods[day.DayName][periodKey] = true
+
+						assigned = true
+						break // Break loop once a classroom is assigned
+					}
+
+					if !assigned {
+						continue // Skip to the next period if no classroom was assigned
+					}
+				}
+			}
+
+			// Check if the generated timetable is valid and doesn't conflict with existing timetable
+			validTimetable = !CheckTimetableConflicts(timetable, existingTimetable)
+		}
+	}
+
+	return timetable // Return the generated timetable
+}
+
+// IsPeriodAvailable checks if the period is available for the faculty based on the existing timetable
+func IsPeriodAvailable(existingTimetable map[string]map[string][]models.TimetableEntry, day, period, facultyName string) bool {
+	for _, entries := range existingTimetable[day] {
+		for _, entry := range entries {
+			if entry.FacultyName == facultyName && entry.StartTime == period {
+				return false // Conflict found if the same faculty is already assigned to the period
+			}
+		}
+	}
+	return true // Return true if no conflict is found
+}
+
+// Function to check for timetable conflicts
+
+func CheckTimetableConflicts(timetable FacultyBasedTimetable, existingTimetable map[string]map[string][]models.TimetableEntry) bool {
+	for dayName, periods := range existingTimetable {
+		for _, entries := range periods {
+			for _, entry := range entries {
+				if facultyEntries, exists := timetable[entry.FacultyName]; exists {
+					if dayEntries, exists := facultyEntries[dayName]; exists {
+						for _, newEntry := range dayEntries {
+							if newEntry.StartTime == entry.StartTime && newEntry.EndTime == entry.EndTime {
+								return true
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+// package timetables
+
+// import (
+// 	"fmt"
+// 	"math/rand"
+// 	"ssg-portal/config"
+// 	"ssg-portal/models"
+// 	"time"
+// )
+
+// type FacultyBasedTimetable map[string]map[string][]models.TimetableEntry
+
+// // Function to fetch existing timetable data from the database
+// func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, error) {
+// 	var existingTimetable map[string]map[string][]models.TimetableEntry
+// 	rows, err := config.Database.Query("SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom FROM timetable")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	existingTimetable = make(map[string]map[string][]models.TimetableEntry)
+// 	for rows.Next() {
+// 		var dayName, startTime, endTime, subjectName, facultyName, classroom string
+// 		err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		if _, exists := existingTimetable[dayName]; !exists {
+// 			existingTimetable[dayName] = make(map[string][]models.TimetableEntry)
+// 		}
+// 		periodKey := fmt.Sprintf("%s-%s", startTime, endTime)
+// 		entry := models.TimetableEntry{
+// 			DayName:     dayName,
+// 			StartTime:   startTime,
+// 			EndTime:     endTime,
+// 			SubjectName: subjectName,
+// 			FacultyName: facultyName,
+// 			Classroom:   classroom,
+// 		}
+// 		existingTimetable[dayName][periodKey] = append(existingTimetable[dayName][periodKey], entry)
+// 	}
+
+// 	return existingTimetable, nil
+// }
+
+// // Function to check if the period is available
+// func IsPeriodAvailable(existingTimetable map[string]map[string][]models.TimetableEntry, dayName, periodKey, facultyName string) bool {
+// 	if periods, exists := existingTimetable[dayName]; exists {
+// 		if entries, occupied := periods[periodKey]; occupied {
+// 			for _, entry := range entries {
+// 				if entry.FacultyName == facultyName {
+// 					return false
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return true
+// }
+
+// // Generate timetable function with conditional generation based on existing entries
+// func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject) FacultyBasedTimetable {
+// 	var timetable FacultyBasedTimetable
+// 	var validTimetable bool
+
+// 	// Seed the random number generator
+// 	rand.Seed(time.Now().UnixNano())
+
+// 	// Fetch existing timetable data
+// 	existingTimetable, err := FetchExistingTimetable()
+// 	if err != nil {
+// 		fmt.Println("Error fetching existing timetable:", err)
+// 		return nil
+// 	}
+
+// 	// Maps for lookup
+// 	subjectIDToName := make(map[int]string)
+// 	facultyIDToName := make(map[int]string)
+// 	facultyIDToDepartment := make(map[int]int)
+// 	subjectToFaculty := make(map[int]int)
+
+// 	for _, subject := range subjects {
+// 		subjectIDToName[subject.ID] = subject.Name
+// 	}
+
+// 	for _, f := range faculty {
+// 		facultyIDToName[f.ID] = f.FacultyName
+// 		facultyIDToDepartment[f.ID] = f.DepartmentID
+// 	}
+
+// 	for _, fs := range facultySubjects {
+// 		subjectToFaculty[fs.SubjectID] = fs.FacultyID
+// 	}
+
+// 	facultyAssignments := make(map[string]map[string]bool)
+// 	periodsAssigned := make(map[string]map[string]bool)
+// 	assignedSubjects := make(map[string]map[int]bool)
+// 	classroomPeriods := make(map[string]map[string]bool)
+
+// 	for _, day := range days {
+// 		facultyAssignments[day.DayName] = make(map[string]bool)
+// 		assignedSubjects[day.DayName] = make(map[int]bool)
+// 		classroomPeriods[day.DayName] = make(map[string]bool)
+// 		periodsAssigned[day.DayName] = make(map[string]bool)
+// 	}
+
+// 	for !validTimetable {
+// 		timetable = make(FacultyBasedTimetable)
+// 		facultyHours := make(map[int]int)
+
+// 		for _, day := range days {
+// 			for _, hour := range hours {
+// 				periodKey := fmt.Sprintf("%s-%s", hour.StartTime, hour.EndTime)
+// 				if periodsAssigned[day.DayName][periodKey] {
+// 					continue
+// 				}
+// 				periodsAssigned[day.DayName][periodKey] = true
+
+// 				var subject models.Subject
+// 				for {
+// 					subjectIndex := rand.Intn(len(subjects))
+// 					subject = subjects[subjectIndex]
+// 					if assignedSubjects[day.DayName][subject.ID] {
+// 						continue
+// 					}
+// 					facultyID, facultyAssigned := subjectToFaculty[subject.ID]
+// 					if facultyAssigned {
+// 						if facultyHours[facultyID] < 6 {
+// 							break
+// 						}
+// 					}
+// 				}
+
+// 				facultyID, exists := subjectToFaculty[subject.ID]
+// 				if !exists {
+// 					continue
+// 				}
+
+// 				if _, ok := facultyAssignments[day.DayName]; !ok {
+// 					facultyAssignments[day.DayName] = make(map[string]bool)
+// 				}
+
+// 				if facultyAssignments[day.DayName][periodKey] {
+// 					continue
+// 				}
+
+// 				assigned := false
+// 				for _, classroom := range classrooms {
+// 					if classroomPeriods[day.DayName][periodKey] {
+// 						continue
+// 					}
+
+// 					if !IsPeriodAvailable(existingTimetable, day.DayName, periodKey, facultyIDToName[facultyID]) {
+// 						continue
+// 					}
+
+// 					entry := models.TimetableEntry{
+// 						DayName:     day.DayName,
+// 						StartTime:   hour.StartTime,
+// 						EndTime:     hour.EndTime,
+// 						SubjectName: subjectIDToName[subject.ID],
+// 						FacultyName: facultyIDToName[facultyID],
+// 						Classroom:   classroom.ClassroomName,
+// 					}
+
+// 					if _, ok := timetable[facultyIDToName[facultyID]]; !ok {
+// 						timetable[facultyIDToName[facultyID]] = make(map[string][]models.TimetableEntry)
+// 					}
+// 					timetable[facultyIDToName[facultyID]][day.DayName] = append(timetable[facultyIDToName[facultyID]][day.DayName], entry)
+
+// 					facultyHours[facultyID]++
+// 					facultyAssignments[day.DayName][periodKey] = true
+// 					assignedSubjects[day.DayName][subject.ID] = true
+// 					classroomPeriods[day.DayName][periodKey] = true
+
+// 					assigned = true
+// 					break
+// 				}
+
+// 				if !assigned {
+// 					continue
+// 				}
+// 			}
+// 		}
+
+// 		validTimetable = !CheckTimetableConflicts(timetable, existingTimetable)
+// 	}
+
+// 	return timetable
+// }
+
+// // Function to check for timetable conflicts
+
+//	func CheckTimetableConflicts(timetable FacultyBasedTimetable, existingTimetable map[string]map[string][]models.TimetableEntry) bool {
+//		for dayName, periods := range existingTimetable {
+//			for _, entries := range periods {
+//				for _, entry := range entries {
+//					if facultyEntries, exists := timetable[entry.FacultyName]; exists {
+//						if dayEntries, exists := facultyEntries[dayName]; exists {
+//							for _, newEntry := range dayEntries {
+//								if newEntry.StartTime == entry.StartTime && newEntry.EndTime == entry.EndTime {
+//									return true
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//		return false
+//	}

@@ -12,6 +12,9 @@
 //
 //
 //
+//
+//
+//
 
 // 	"github.com/gin-contrib/cors"
 // 	"github.com/gin-gonic/gin"
@@ -114,7 +117,7 @@ import (
 
 func main() {
 	config.ConnectDB()
-
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(cors.Default())
 
