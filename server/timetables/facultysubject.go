@@ -7,9 +7,9 @@ import (
 	"ssg-portal/models"
 )
 
-func GetFacultySubjects() ([]models.FacultySubject, error) {
+func GetFacultySubjects(semesterID int) ([]models.FacultySubject, error) {
 	var facultySubjects []models.FacultySubject
-	rows, err := config.Database.Query("SELECT faculty_id, subject_id FROM faculty_subjects")
+	rows, err := config.Database.Query("SELECT faculty_id, subject_id,semester_id FROM faculty_subjects WHERE semester_id = ? ", semesterID)
 	if err != nil {
 		return nil, fmt.Errorf("error querying faculty-subject mappings: %v", err)
 	}
@@ -17,7 +17,7 @@ func GetFacultySubjects() ([]models.FacultySubject, error) {
 
 	for rows.Next() {
 		var fs models.FacultySubject
-		if err := rows.Scan(&fs.FacultyID, &fs.SubjectID); err != nil {
+		if err := rows.Scan(&fs.FacultyID, &fs.SubjectID, &fs.SemesterID); err != nil {
 			return nil, fmt.Errorf("error scanning faculty-subject: %v", err)
 		}
 		facultySubjects = append(facultySubjects, fs)

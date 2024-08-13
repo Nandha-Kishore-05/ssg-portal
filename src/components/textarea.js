@@ -1,19 +1,19 @@
 import "./style.css";
 
-function TextAreaBox(props) {
+function TextArea(props) {
   return (
-    <div className="input-box" style={{ marginTop: props.margin }}>
+    <div style={{ marginTop: props.margin }} className="input-box">
       <label>{props.label}</label>
       <br />
-      <textarea 
-      style={{
-        maxLines:props.max,
-        minHeight:props.minHeight
-      }}  
-      
-      type={props.type} placeholder={props.placeholder} />
+      <textarea
+        style={{ minHeight: props.height === undefined ? 200 : props.height }}
+        placeholder={props.placeholder}
+        onChange={(e) => {
+          props.onChange(e.target.value);
+        }}
+      />
     </div>
   );
 }
 
-export default TextAreaBox;
+export default TextArea;

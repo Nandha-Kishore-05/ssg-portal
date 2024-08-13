@@ -2,33 +2,39 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import AppLayout from '../../layout/layout';
+import './workload.css';
+import CustomSelect from '../../components/select';
+import CustomButton from '../../components/button';
 
 const SavedTimetable = () => {
-  const { departmentID } = useParams();
+  const { departmentID,semesterID  } = useParams();
   const [schedule, setSchedule] = useState([]);
   const [days, setDays] = useState([]);
   const [times, setTimes] = useState([]);
+  const [venue, setVenue] = useState('');
 
   useEffect(() => {
     const fetchSchedule = async () => {
-      if (!departmentID) {
-        console.error('Department ID is required');
+      if (!departmentID || !semesterID) {
+        console.error('Department ID and Semester ID are required');
         return;
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/saved/${departmentID}`);
+        const response = await axios.get(`http://localhost:8080/timetable/saved/${departmentID}/${semesterID}`);
         const data = response.data;
 
         console.log('Fetched data:', data);
 
         const allDays = new Set();
         const allTimes = new Set();
+        let venueSet = new Set();
 
-        // Extract unique days and time slots
+        // Extract unique days, time slots, and venue
         data.forEach(item => {
           allDays.add(item.day_name);
           allTimes.add(`${item.start_time} - ${item.end_time}`);
+          venueSet.add(item.classroom); // Collect unique venues
         });
 
         const sortedDays = Array.from(allDays).sort((a, b) => {
@@ -41,19 +47,22 @@ const SavedTimetable = () => {
         setDays(sortedDays);
         setTimes(sortedTimes);
         setSchedule(data);
+        setVenue(Array.from(venueSet).join(', ')); // Set venue
       } catch (error) {
         console.error('Error fetching timetable:', error);
       }
     };
 
     fetchSchedule();
-  }, [departmentID]);
+  }, [departmentID,semesterID]);
 
   return (
     <AppLayout
       rId={3}
       title="Venue Table"
       body={
+        <>
+        
         <div style={{ 
           backgroundColor: '#fff', 
           padding: '20px', 
@@ -62,7 +71,8 @@ const SavedTimetable = () => {
           margin: '20px 0'
         }}>
           <div style={{display:'flex',flexDirection:'row',justifyContent:'space-between',marginBottom:'13px'}}>
-            <h2 style={{fontSize:'20px',marginTop:'5px'}}>Venue : WW212</h2>
+          <h2 style={{fontSize:'20px',marginTop:'5px'}}>Semester : S{semesterID}</h2>
+            <h2 style={{fontSize:'20px',marginTop:'5px'}}>Venue: {venue || 'Not Available'}</h2>
           </div>
           <table style={{ 
             width: '100%', 
@@ -130,6 +140,7 @@ const SavedTimetable = () => {
             </tbody>
           </table>
         </div>
+        </>
       }
     />
   );

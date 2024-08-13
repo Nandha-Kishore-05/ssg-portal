@@ -1,0 +1,87 @@
+
+  
+  .login-container {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    text-align: center;
+    width: 360px;
+    max-width: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .login-container:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  }
+  
+  .login-container h1 {
+    margin-bottom: 20px;
+    font-size: 28px;
+    color: #333;
+    font-weight: 600;
+  }
+  
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .google-button {
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .google-button:hover {
+    background-color: #357AE8;
+    transform: scale(1.03);
+  }
+  
+  .google-button img {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .login-container p {
+    margin-top: 20px;
+    color: #555;
+  }
+  
+  .login-container a {
+    color: #4285F4;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .login-container a:hover {
+    text-decoration: underline;
+  }
+  
+  .create-account {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #333;
+  }
+  
+  .create-account a {
+    color: #4285F4;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .create-account a:hover {
+    text-decoration: underline;
+  }
+  

@@ -7,18 +7,19 @@ import (
 	"ssg-portal/models"
 )
 
-func GetSubjects(departmentID int) ([]models.Subject, error) {
+// GetSubjects retrieves subjects based on departmentID and semesterID
+func GetSubjects(departmentID, semesterID int) ([]models.Subject, error) {
 	var subjects []models.Subject
 
-	// Define the query to select subjects by department ID
+	// Define the query to select subjects by department ID and semester ID
 	query := `
-		SELECT id, name
+		SELECT id, name, status, periods
 		FROM subjects
-		WHERE department_id = ?
+		WHERE department_id = ? AND semester_id = ?
 	`
 
 	// Execute the query
-	rows, err := config.Database.Query(query, departmentID)
+	rows, err := config.Database.Query(query, departmentID, semesterID)
 	if err != nil {
 		return nil, fmt.Errorf("error querying subjects: %v", err)
 	}
@@ -27,7 +28,7 @@ func GetSubjects(departmentID int) ([]models.Subject, error) {
 	// Iterate through the result set
 	for rows.Next() {
 		var subject models.Subject
-		if err := rows.Scan(&subject.ID, &subject.Name); err != nil {
+		if err := rows.Scan(&subject.ID, &subject.Name, &subject.Status, &subject.Period); err != nil {
 			return nil, fmt.Errorf("error scanning subject: %v", err)
 		}
 		subjects = append(subjects, subject)

@@ -1,0 +1,10 @@
+.saved-top-bar{
+    display: flex;
+background-color: aqua;
+height: 15%;
+column-gap: 10px;
+width: 100%;
+
+margin-top: 8px;
+ }
+ 

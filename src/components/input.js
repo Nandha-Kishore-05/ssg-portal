@@ -2,10 +2,20 @@ import "./style.css";
 
 function InputBox(props) {
   return (
-    <div className="input-box" style={{ marginTop: props.margin }}>
+    <div style={{ marginTop: props.margin }} className="input-box">
       <label>{props.label}</label>
       <br />
-      <input type={props.type} placeholder={props.placeholder} />
+      <input
+        placeholder={props.placeholder}
+        type={props.type}
+        accept={props.accept}
+        value={props.value}
+        onChange={(e) => {
+          props.type === "file"
+            ? props.onChange(e)
+            : props.onChange(e.target.value);
+        }}
+      />
     </div>
   );
 }
