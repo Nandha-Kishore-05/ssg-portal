@@ -4,6 +4,7 @@ import Timetable from "../pages/workload/workload";
 import SavedTimetable from "../pages/workload/timetable";
 import FacultyTimetable from "../pages/workload/facultytable";
 import Login from "../auth/login";
+import LabTimetable from "../pages/workload/labtable";
 
 
 
@@ -21,12 +22,16 @@ const routes = [
     element: <Timetable />,
   },
   {
-    path: "/timetable/saved/:departmentID/:semesterID",
+    path: "/timetable/saved",
     element: <SavedTimetable />,
   },
   {
     path: "/timetable/faculty/:facultyName",
     element: <FacultyTimetable />,
+  },
+  {
+    path: "/timetable/lab/:subjectName",
+    element: <LabTimetable />,
   },
  
 ];

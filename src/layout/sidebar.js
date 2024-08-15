@@ -32,6 +32,12 @@ function SideBar(props) {
         label: "FacultyTable",
         path: "/timetable/faculty/:facultyName",
       },
+      {
+        id: 5,
+        icon: <DashboardRounded />,
+        label: "LabTable",
+        path: "/timetable/lab/:subjectName",
+      },
     
 
 

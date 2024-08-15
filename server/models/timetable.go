@@ -62,13 +62,25 @@ type Department struct {
 	Department string `json:"name"`
 }
 type FacultyTimetableEntry struct {
-	DayName   string `json:"day_name"`
-	StartTime string `json:"start_time"`
-	EndTime   string `json:"end_time"`
-	Classroom string `json:"classroom"`
+	DayName     string `json:"day_name"`
+	StartTime   string `json:"start_time"`
+	EndTime     string `json:"end_time"`
+	Classroom   string `json:"classroom"`
+	SemesterID  int    `json:"semester_id"`
+	SubjectName string `json:"subject_name"`
 }
 type Semester struct {
 	ID           int
 	SemesterName string
 	YearID       int
+}
+
+type LabTimetableEntry struct {
+	DayName     string `json:"day_name"`
+	StartTime   string `json:"start_time"`
+	EndTime     string `json:"end_time"`
+	Classroom   string `json:"classroom"`
+	SemesterID  int    `json:"semester_id"`
+	SubjectName string `json:"subject_name"`
+	FacultyName string `json:"faculty_name"`
 }

@@ -3,8 +3,8 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import AppLayout from '../../layout/layout';
 
-const FacultyTimetable = () => {
-  const { facultyName } = useParams(); // Get facultyName from URL params
+const LabTimetable = () => {
+  const { subjectName } = useParams(); // Get facultyName from URL params
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,7 +12,7 @@ const FacultyTimetable = () => {
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/faculty/${facultyName}`);
+        const response = await axios.get(`http://localhost:8080/timetable/lab/${subjectName}`);
         setSchedule(response.data);
       } catch (err) {
         setError(err.message);
@@ -21,10 +21,10 @@ const FacultyTimetable = () => {
       }
     };
 
-    if (facultyName) {
+    if (subjectName) {
       fetchTimetable();
     }
-  }, [facultyName]);
+  }, [subjectName]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -54,8 +54,8 @@ const FacultyTimetable = () => {
 
   return (
     <AppLayout
-      rId={4}
-      title="Faculty Time Table"
+      rId={5}
+      title="Lab Time Table"
       body={
         <div style={{ 
           backgroundColor: '#fff', 
@@ -65,7 +65,7 @@ const FacultyTimetable = () => {
           margin: '20px 0'
         }}>
           <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginBottom: '13px' }}>
-            <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Faculty: {facultyName}</h2>
+            <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Lab Name : {subjectName}</h2>
           </div>
           <table style={{ 
             width: '100%', 
@@ -118,8 +118,8 @@ const FacultyTimetable = () => {
                         {classes.length > 0 ? (
                           classes.map((item, idx) => (
                             <div key={idx}>
-                              <div>{item.classroom}</div>
-                          
+                              <div>{item.subject_name}</div>
+                              <div>{item.faculty_name}</div>
                               <div>S{item.semester_id}</div>
                             </div>
                           ))
@@ -139,4 +139,4 @@ const FacultyTimetable = () => {
   );
 };
 
-export default FacultyTimetable;
+export default LabTimetable;

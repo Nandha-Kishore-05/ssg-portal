@@ -5,13 +5,13 @@ function CustomSelect(props) {
   return (
     <div
       className="input-box"
-      // style={{
-      //   marginTop: props.margin ? props.margin : 20,
-      //   flex: !props.widthFull ? 3 : null,
-      // }}
+      style={{
+        marginTop: props.margin ? props.margin : 20,
+        flex: !props.widthFull ? 3 : null,
+      }}
     >
       {props.label ? <label>{props.label}</label> : null}
-      <div style={{ marginTop: 5, fontSize: 14 }}>
+      <div style={{ marginTop: 5, fontSize: 16 ,fontWeight:"bolder"}}>
         <Select
           onChange={(e) => {
             props.isMulti ? props.onChange(e) : props.onChange(e.value);

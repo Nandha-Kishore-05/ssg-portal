@@ -25,7 +25,7 @@ func FacultyTimetable(c *gin.Context) {
 
 func getFacultyTimetable(facultyName string) ([]models.FacultyTimetableEntry, error) {
 	query := `
-		SELECT day_name, start_time, end_time, classroom
+		SELECT day_name, start_time, end_time, classroom,semester_id,subject_name
 		FROM timetable
 		WHERE faculty_name = ? 
 	`
@@ -41,7 +41,7 @@ func getFacultyTimetable(facultyName string) ([]models.FacultyTimetableEntry, er
 
 	for rows.Next() {
 		var entry models.FacultyTimetableEntry
-		if err := rows.Scan(&entry.DayName, &entry.StartTime, &entry.EndTime, &entry.Classroom); err != nil {
+		if err := rows.Scan(&entry.DayName, &entry.StartTime, &entry.EndTime, &entry.Classroom, &entry.SemesterID, &entry.SubjectName); err != nil {
 			fmt.Println("Error scanning row:", err)
 			return nil, err
 		}

@@ -300,6 +300,7 @@ const Timetable = () => {
             subject_name: entry.subject_name,
             faculty_name: entry.faculty_name,
             classroom: entry.classroom,
+            status:entry.status,
             semester_id: entry.semester_id,
           };
           timetableData.push(data);

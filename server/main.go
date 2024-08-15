@@ -250,5 +250,6 @@ func main() {
 	r.POST("/timetable/save", timetables.SaveTimetable)
 	r.GET("/timetable/saved/:departmentID/:semesterId", timetables.GetTimetable)
 	r.GET("/timetable/faculty/:faculty_name", timetables.FacultyTimetable)
+	r.GET("/timetable/lab/:subject_name", timetables.LabTableTimetable)
 	r.Run(":8080")
 }
