@@ -67,7 +67,7 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-	// Fetch classrooms
+
 	classrooms, err := timetables.GetClassrooms(departmentID, semesterID)
 	if err != nil {
 		log.Printf("Error getting classrooms for department ID %d: %v", departmentID, err)
