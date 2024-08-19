@@ -51,7 +51,7 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-	// Fetch subjects
+
 	subjects, err := timetables.GetSubjects(departmentID, semesterID)
 	if err != nil {
 		log.Printf("Error getting subjects for department ID %d: %v", departmentID, err)
