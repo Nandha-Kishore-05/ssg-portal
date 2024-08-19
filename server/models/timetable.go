@@ -84,3 +84,12 @@ type LabTimetableEntry struct {
 	SubjectName string `json:"subject_name"`
 	FacultyName string `json:"faculty_name"`
 }
+type Record struct {
+	Department string `json:"Department"`
+	Faculty    string `json:"Faculty"`
+	Status     int    `json:"Status"`
+	Periods    int    `json:"Periods"`
+	Semester   int    `json:"Semester"`
+	Subject    string `json:"Subject"`
+	Venue      string `json:"Venue"`
+}
