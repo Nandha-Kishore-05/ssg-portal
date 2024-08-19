@@ -14,7 +14,7 @@ function CustomSelect(props) {
       <div style={{ marginTop: 5, fontSize: 16 ,fontWeight:"bolder"}}>
         <Select
           onChange={(e) => {
-            props.isMulti ? props.onChange(e) : props.onChange(e.value);
+            props.isMulti ? props.onChange(e) : props.onChange(e);
 
           }}
           options={props.options}
