@@ -55,40 +55,8 @@ function Dashboard() {
       rId={1}
       title="Dashboard"
       body={
-        <>
-        <div className='grid-layout'>
-          <div className='grid'>
-            <div className='working-hours'>
-              <div className='header'>
-                Daily Working Hours
-              </div>
-              <BarChart
-                width={1350}
-                height={300}
-                data={dailyData}
-                margin={{ top: 40, right: 10, left: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis tickLine={false} />
-                <Tooltip />
-                <Bar dataKey="hours" fill="blue" />
-              </BarChart>
-            </div>
-          </div>
-          </div>
-          <div className='grid-2'>
-            <div className='mwh'>
-              <div className='header-2'>
-                Monthly Working Hours
-              </div>
-             
-            </div>
-            <div className='grid-3'>
-              <div className='header-2'>Student Log</div>
-            </div>
-          </div>
-        </>
+       <>
+       </>
       }
     />
   );

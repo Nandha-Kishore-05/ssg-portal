@@ -38,20 +38,21 @@ const FacTimetable = () => {
       title="Faculty Table"
       body={
         <div style={{backgroundColor:"white",padding: 17,marginTop: 20,borderRadius:"10" }}>
+                         <div style={{display:'flex',flexDirection:'row',columnGap:10,alignItems:"center"}}>
           <CustomSelect
             placeholder="Faculty Name"
             value={selectedFaculty}
             onChange={setSelectedFaculty}
             options={facultyOptions}
           />
-          <br />
-          <center>
+          
             <CustomButton
               width="150"
               label="View Timetable"
               onClick={handleViewTimetable}
             />
-          </center>
+            </div>
+       
           { (selectedFaculty && isOpen) && 
           <FacultyTimetable facultyName ={selectedFaculty.value} />
              

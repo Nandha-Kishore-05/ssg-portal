@@ -38,7 +38,13 @@ function SideBar(props) {
         label: "LabTable",
         path: "/timetable/lab",
       },
-    
+      {
+        id: 6,
+        icon: <DashboardRounded />,
+        label: "Period Allocation",
+        path: "/timetable/periodallocation",
+      },
+
 
 
   
@@ -61,7 +67,7 @@ function SideBar(props) {
     <div className="app-sidebar">
       <div className="sidebar-header">
       
-        <h2 style={{fontSize:"28"}}> TT PORTAL </h2>
+        <h2 style={{fontSize:"28",color:"white"}}> TT PORTAL </h2>
       </div>
 
       <div className="sidebar-menu">

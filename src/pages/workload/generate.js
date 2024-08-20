@@ -48,6 +48,7 @@ const GenerateTimetable = () => {
           title="Time Table"
           body={
             <div style={{backgroundColor:"white",padding: 17,marginTop: 20,borderRadius:"10" }}>
+                <div style={{display:'flex',flexDirection:'row',columnGap:10,alignItems:"center"}}>
             <CustomSelect
             placeholder="DEPARTMENT"
             value={department}
@@ -60,18 +61,21 @@ const GenerateTimetable = () => {
             onChange={setSemester}
             options={semOptions}
           />
-          <br />
-          <center>
+        
             <CustomButton
               width="150"
               label="Generate Timetable"
               onClick={handleViewTimetable}
+              backgroundColor="#0878d3"
             />
-          </center>
+     
+          </div>
+        
           { (department && semester && isOpen) && 
           <Timetable departmentID={department.value} semesterID = {semester.value} />
              
           }
+       
                 </div>
           }
           />

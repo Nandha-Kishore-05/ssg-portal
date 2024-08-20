@@ -26,5 +26,6 @@ func main() {
 	r.GET("/timetable/labOptions", timetables.LabOptions)
 	r.GET("/timetable/options", timetables.TimetableOptions)
 	r.GET("/timetable/semoptions", timetables.SemOptions)
+	r.POST("/upload", timetables.Uploaddetails)
 	r.Run(":8080")
 }

@@ -9,6 +9,7 @@ import SaveTimetable from "../pages/workload/save";
 import GenerateTimetable from "../pages/workload/generate";
 import FacTimetable from "../pages/workload/faculty";
 import Lab from "../pages/workload/lab";
+import PeriodAllocation from "../pages/allocation/periodAllocation";
 
 
 
@@ -40,7 +41,11 @@ const routes = [
     path: "/timetable/lab",
     element: <Lab />,
   },
- 
+  {
+    path: "/timetable/periodallocation",
+    element: <PeriodAllocation />,
+  },
+
  
 ];
 

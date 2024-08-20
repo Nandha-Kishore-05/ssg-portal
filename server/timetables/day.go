@@ -30,4 +30,4 @@ func GetAvailableDays() ([]models.Day, error) {
 	return days, nil
 }
 
-// Define similar functions for GetHours, GetSubjects, GetFaculty, GetClassrooms, and GetFacultySubjects
+

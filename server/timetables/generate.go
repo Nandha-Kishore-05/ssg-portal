@@ -62,6 +62,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 	}
 
 	if existingTimetable != nil && len(existingTimetable) > 0 {
+		
 		for {
 			timetable := make(map[string]map[string][]models.TimetableEntry)
 			subjectsAssigned := make(map[string]map[string]bool)

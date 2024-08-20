@@ -6,7 +6,7 @@ function CustomSelect(props) {
     <div
       className="input-box"
       style={{
-        marginTop: props.margin ? props.margin : 20,
+        marginTop: props.margin ? props.margin :null,
         flex: !props.widthFull ? 3 : null,
       }}
     >

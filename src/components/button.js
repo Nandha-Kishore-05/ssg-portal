@@ -7,13 +7,8 @@ function CustomButton(props) {
       className="custom-button"
       style={{
         width: props.width ? props.width : "100%",
-        marginTop: props.margin,
-        backgroundColor:
-          props.type === "success"
-            ? "#605BFF"
-            : props.type === "danger"
-            ? "red"
-            : "",
+        marginTop: props.marginTop,
+        backgroundColor : props.backgroundColor
       }}
     >
       {props.label}

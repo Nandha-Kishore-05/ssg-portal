@@ -36,6 +36,7 @@ const Lab = () => {
           title="Lab Table"
           body={
             <div style={{backgroundColor:"white",padding: 17,marginTop: 20,borderRadius:"10" }}>
+                             <div style={{display:'flex',flexDirection:'row',columnGap:10,alignItems:"center"}}>
             <CustomSelect
             placeholder="Lab Name"
             value={selectedLab}
@@ -43,14 +44,14 @@ const Lab = () => {
             options={labOptions}
           />
         
-          <br />
-          <center>
+          
             <CustomButton
               width="150"
               label="View Timetable"
               onClick={handleViewTimetable}
             />
-          </center>
+        
+          </div>
           { (selectedLab && isOpen) && 
           <LabTimetable subjectName ={selectedLab.value} />
              
