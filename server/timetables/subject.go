@@ -34,7 +34,7 @@ func GetSubjects(departmentID, semesterID int) ([]models.Subject, error) {
 		subjects = append(subjects, subject)
 	}
 
-	// Check for errors encountered during iteration
+	
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating rows: %v", err)
 	}

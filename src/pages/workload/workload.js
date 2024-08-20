@@ -205,7 +205,7 @@ import CustomButton from '../../components/button';
 import { useParams } from 'react-router-dom';
 import AppLayout from '../../layout/layout';
 
-const Timetable = () => {
+const Timetable = (props) => {
   const { departmentID, semesterID } = useParams();
   const [schedule, setSchedule] = useState({});
   const [days, setDays] = useState([]);
@@ -214,13 +214,13 @@ const Timetable = () => {
 
   useEffect(() => {
     const fetchSchedule = async () => {
-      if (!departmentID || !semesterID) {
+      if (!props.departmentID || !props.semesterID) {
         console.error('Department ID and Semester ID are required');
         return;
       }
     
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/${departmentID}/${semesterID}`);
+        const response = await axios.get(`http://localhost:8080/timetable/${props.departmentID}/${props.semesterID}`);
         const data = response.data;
     
         console.log('Fetched data:', data);
@@ -267,7 +267,7 @@ const Timetable = () => {
     };
     
     fetchSchedule();
-  }, [departmentID, semesterID]);
+  }, [props.departmentID, props.semesterID]);
 
   const handleSaveTimetable = async (timetableData) => {
     try {
@@ -302,6 +302,7 @@ const Timetable = () => {
             classroom: entry.classroom,
             status:entry.status,
             semester_id: entry.semester_id,
+            department_id : entry.department_id,
           };
           timetableData.push(data);
         });
@@ -314,10 +315,8 @@ const Timetable = () => {
   };
 
   return (
-    <AppLayout
-      rId={2}
-      title="TIME TABLE"
-      body={
+   
+        <>
         <div style={{ 
           backgroundColor: '#fff', 
           padding: '20px', 
@@ -327,7 +326,7 @@ const Timetable = () => {
         }}>
           <div style={{display:'flex',flexDirection:'row',justifyContent:'space-between',marginBottom:'13px'}}>
             <div style={{display:'flex',flexDirection:'row'}}>
-              <h2 style={{fontSize:'20px',marginTop:'5px'}}>Semester : S{semesterID}</h2>
+              <h2 style={{fontSize:'20px',marginTop:'5px'}}>Semester : S{props.semesterID}</h2>
               <h2 style={{fontSize:'20px',marginTop:'5px',marginLeft:'30px'}}>Venue : {venue}</h2>
             </div>
             <CustomButton
@@ -399,8 +398,8 @@ const Timetable = () => {
             </tbody>
           </table>
         </div>
-      }
-    />
+        </>
+ 
   );
 };
 

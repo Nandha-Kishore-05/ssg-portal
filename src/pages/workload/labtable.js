@@ -3,8 +3,8 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import AppLayout from '../../layout/layout';
 
-const LabTimetable = () => {
-  const { subjectName } = useParams(); // Get facultyName from URL params
+const LabTimetable = (props) => {
+  
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,7 +12,7 @@ const LabTimetable = () => {
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/lab/${subjectName}`);
+        const response = await axios.get(`http://localhost:8080/timetable/lab/${props.subjectName}`);
         setSchedule(response.data);
       } catch (err) {
         setError(err.message);
@@ -21,10 +21,10 @@ const LabTimetable = () => {
       }
     };
 
-    if (subjectName) {
+    if (props.subjectName) {
       fetchTimetable();
     }
-  }, [subjectName]);
+  }, [props.subjectName]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -53,10 +53,8 @@ const LabTimetable = () => {
   });
 
   return (
-    <AppLayout
-      rId={5}
-      title="Lab Time Table"
-      body={
+   
+        <>
         <div style={{ 
           backgroundColor: '#fff', 
           padding: '20px', 
@@ -65,7 +63,7 @@ const LabTimetable = () => {
           margin: '20px 0'
         }}>
           <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginBottom: '13px' }}>
-            <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Lab Name : {subjectName}</h2>
+            <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Lab Name : {props.subjectName}</h2>
           </div>
           <table style={{ 
             width: '100%', 
@@ -134,8 +132,8 @@ const LabTimetable = () => {
             </tbody>
           </table>
         </div>
-      }
-    />
+        </>
+    
   );
 };
 

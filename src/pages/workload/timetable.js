@@ -374,9 +374,9 @@ import './workload.css';
 import CustomSelect from '../../components/select';
 import CustomButton from '../../components/button';
 
-const SavedTimetable = () => {
+const SavedTimetable = (props) => {
   const navigate = useNavigate();
-  const { departmentID, semesterID } = useParams();
+  
   const [schedule, setSchedule] = useState([]);
   const [days, setDays] = useState([]);
   const [times, setTimes] = useState([]);
@@ -385,13 +385,13 @@ const SavedTimetable = () => {
 
   useEffect(() => {
     const fetchSchedule = async () => {
-      if (!departmentID || !semesterID) {
+      if (!props.departmentID || !props.semesterID) {
         console.error('Department ID and Semester ID are required');
         return;
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/saved/${departmentID}/${semesterID}`);
+        const response = await axios.get(`http://localhost:8080/timetable/saved/${props.departmentID}/${props.semesterID}`);
         const data = response.data;
 
         console.log('Fetched data:', data);
@@ -424,15 +424,12 @@ const SavedTimetable = () => {
     };
 
     fetchSchedule();
-  }, [departmentID, semesterID]);
+  }, [props.departmentID, props.semesterID]);
 
 
 
   return (
-    <AppLayout
-      rId={3}
-      title="Venue Table"
-      body={
+    
         <>
          
           <div style={{
@@ -443,7 +440,7 @@ const SavedTimetable = () => {
             margin: '20px 0'
           }}>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginBottom: '13px' }}>
-              <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Semester : S{semesterID}</h2>
+              <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Semester : S{props.semesterID}</h2>
               <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Venue: {venue || 'Not Available'}</h2>
             </div>
             <table style={{
@@ -513,9 +510,8 @@ const SavedTimetable = () => {
             </table>
           </div>
         </>
-      }
-    />
-  );
-};
+
+ );
+              };
 
 export default SavedTimetable;

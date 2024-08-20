@@ -38,12 +38,6 @@ function SideBar(props) {
         label: "LabTable",
         path: "/timetable/lab",
       },
-      {
-        id: 6,
-        icon: <DashboardRounded />,
-        label: "Period Allocation",
-        path: "/timetable/periodallocation",
-      },
     
 
 

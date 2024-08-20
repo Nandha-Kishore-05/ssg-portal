@@ -15,7 +15,7 @@ type FacultyBasedTimetable map[string]map[string][]models.TimetableEntry
 func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, error) {
 	existingTimetable := make(map[string]map[string][]models.TimetableEntry)
 
-	rows, err := config.Database.Query("SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom,status, semester_id FROM timetable")
+	rows, err := config.Database.Query("SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom,status, semester_id,department_id FROM timetable")
 	if err != nil {
 		return nil, err
 	}
@@ -25,8 +25,9 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 		var dayName, startTime, endTime, subjectName, facultyName, classroom string
 		var status int
 		var semesterID int
+		var departmentID int
 
-		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID); err != nil {
+		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID,&departmentID); err != nil {
 			return nil, err
 		}
 
@@ -43,6 +44,7 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 			Classroom:   classroom,
 			Status:      status,
 			SemesterID:  semesterID,
+			DepartmentID: departmentID,
 		}
 
 		existingTimetable[facultyName][dayName] = append(existingTimetable[facultyName][dayName], entry)
@@ -51,7 +53,8 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 	return existingTimetable, nil
 }
 
-func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester) map[string]map[string][]models.TimetableEntry {
+func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester,departmentID int) map[string]map[string][]models.TimetableEntry {
+
 	existingTimetable, err := FetchExistingTimetable()
 	if err != nil {
 		fmt.Println("Error fetching existing timetable:", err)
@@ -67,6 +70,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 			facultyAssignments := make(map[string]map[string]string) // Map to track faculty assignments
 
 			for _, subject := range subjects {
+			
 				periodsLeft[subject.Name] = subject.Period
 				if subject.Status == 0 {
 					status0Assignments[subject.Name] = make(map[string]bool)
@@ -171,6 +175,8 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 							Classroom:   selectedClassroom.ClassroomName,
 							Status:      subject.Status,
 							SemesterID:  selectedClassroom.SemesterID,
+							DepartmentID: departmentID,
+							
 						}
 
 						if _, ok := timetable[day.DayName]; !ok {
@@ -237,7 +243,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 			fmt.Println("Regenerating timetable due to unassigned periods or conflicts...")
 		}
 	} else {
-		return generateRandomTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters)
+		return generateRandomTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters,departmentID )
 	}
 }
 
@@ -289,6 +295,7 @@ func generateRandomTimetable(
 	classrooms []models.Classroom,
 	facultySubjects []models.FacultySubject,
 	semesters []models.Semester,
+	departmentID int,
 ) FacultyBasedTimetable {
 	// Function to generate the timetable
 	generate := func() FacultyBasedTimetable {
@@ -357,6 +364,8 @@ func generateRandomTimetable(
 
 					if subject.Status == 0 {
 						// Check if the next period is available for continuous assignment
+						fmt.Printf("Subject DepartmentID: %d\n", subject.DepartmentID)
+
 						if i < len(hours)-1 {
 							nextStartTime := hours[i+1].StartTime
 							nextEndTime := hours[i+1].EndTime
@@ -372,6 +381,8 @@ func generateRandomTimetable(
 									Classroom:   selectRandomClassroom(classrooms, subject, semesters),
 									Status:      subject.Status,
 									SemesterID:  getSemesterID(classrooms, subject),
+									DepartmentID: departmentID,
+									
 								}
 
 								entry2 := models.TimetableEntry{
@@ -383,6 +394,8 @@ func generateRandomTimetable(
 									Classroom:   entry1.Classroom,
 									Status:      subject.Status,
 									SemesterID:  entry1.SemesterID,
+									DepartmentID: departmentID,
+									
 								}
 
 								timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry1)
@@ -396,6 +409,7 @@ func generateRandomTimetable(
 						}
 					} else {
 						// Assign status 1 subjects to a single period
+						fmt.Printf("Subject DepartmentID: %d\n", subject.DepartmentID)
 						entry := models.TimetableEntry{
 							DayName:     day.DayName,
 							StartTime:   startTime,
@@ -405,6 +419,8 @@ func generateRandomTimetable(
 							Classroom:   selectRandomClassroom(classrooms, subject, semesters),
 							Status:      subject.Status,
 							SemesterID:  getSemesterID(classrooms, subject),
+							DepartmentID: departmentID,
+							
 						}
 
 						timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
@@ -446,19 +462,21 @@ func generateRandomTimetable(
 	}
 }
 
-// selectRandomClassroom selects a random classroom for a subject
 func selectRandomClassroom(classrooms []models.Classroom, subject models.Subject, semesters []models.Semester) string {
-	for _, cls := range classrooms {
-		if cls.DepartmentID == subject.DepartmentID {
-			for _, semester := range semesters {
-				if semester.ID == cls.SemesterID {
-					return cls.ClassroomName
-				}
-			}
-		}
-	}
-	return ""
+    for _, cls := range classrooms {
+        if cls.DepartmentID == subject.DepartmentID {
+            for _, semester := range semesters {
+                if semester.ID == cls.SemesterID {
+                    return cls.ClassroomName
+				
+
+                }
+            }
+        }
+    }
+    return ""
 }
+
 
 // getSemesterID returns the semester ID for a given subject based on classroom
 func getSemesterID(classrooms []models.Classroom, subject models.Subject) int {

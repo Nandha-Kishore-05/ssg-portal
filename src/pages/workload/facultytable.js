@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
-import AppLayout from '../../layout/layout';
 
-const FacultyTimetable = () => {
-  const { facultyName } = useParams(); // Get facultyName from URL params
+
+
+const FacultyTimetable = (props) => {
+
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,7 +12,7 @@ const FacultyTimetable = () => {
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/faculty/${facultyName}`);
+        const response = await axios.get(`http://localhost:8080/timetable/faculty/${props.facultyName}`);
         setSchedule(response.data);
       } catch (err) {
         setError(err.message);
@@ -21,10 +21,10 @@ const FacultyTimetable = () => {
       }
     };
 
-    if (facultyName) {
+    if (props.facultyName) {
       fetchTimetable();
     }
-  }, [facultyName]);
+  }, [props.facultyName]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -53,10 +53,8 @@ const FacultyTimetable = () => {
   });
 
   return (
-    <AppLayout
-      rId={4}
-      title="Faculty Time Table"
-      body={
+    
+        <>
         <div style={{ 
           backgroundColor: '#fff', 
           padding: '20px', 
@@ -65,7 +63,7 @@ const FacultyTimetable = () => {
           margin: '20px 0'
         }}>
           <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginBottom: '13px' }}>
-            <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Faculty: {facultyName}</h2>
+            <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Faculty: {props.facultyName}</h2>
           </div>
           <table style={{ 
             width: '100%', 
@@ -134,8 +132,8 @@ const FacultyTimetable = () => {
             </tbody>
           </table>
         </div>
-      }
-    />
+        </>
+     
   );
 };
 
