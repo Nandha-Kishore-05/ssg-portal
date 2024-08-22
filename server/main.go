@@ -27,5 +27,7 @@ func main() {
 	r.GET("/timetable/options", timetables.TimetableOptions)
 	r.GET("/timetable/semoptions", timetables.SemOptions)
 	r.POST("/upload", timetables.Uploaddetails)
+	r.GET("faculty/available/:departmentID/:semesterID/:day/:startTime/:endTime", timetables.GetAvailableFaculty)
+	r.GET("/saved/deptoptions", timetables.SavedDepartmentOptions)
 	r.Run(":8080")
 }

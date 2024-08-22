@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
-import AppLayout from '../../layout/layout';
+import './lab.css'; // Import the CSS file
 
 const LabTimetable = (props) => {
-  
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,98 +40,57 @@ const LabTimetable = (props) => {
 
   // Extract unique days and sort based on predefined order
   const allDays = Array.from(new Set(schedule.map(item => item.day_name)));
-  const sortedDays = allDays.sort((a, b) => {
-    return dayOrder.indexOf(a) - dayOrder.indexOf(b);
-  });
+  const sortedDays = allDays.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
 
   // Extract unique time slots and sort based on predefined order
   const allTimes = Array.from(new Set(schedule.map(item => `${item.start_time} - ${item.end_time}`)));
-  const sortedTimes = allTimes.sort((a, b) => {
-    return timeOrder.indexOf(a) - timeOrder.indexOf(b);
-  });
+  const sortedTimes = allTimes.sort((a, b) => timeOrder.indexOf(a) - timeOrder.indexOf(b));
 
   return (
-   
-        <>
-        <div style={{ 
-          backgroundColor: '#fff', 
-          padding: '20px', 
-          borderRadius: '8px', 
-          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)', 
-          margin: '20px 0'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginBottom: '13px' }}>
-            <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Lab Name : {props.subjectName}</h2>
-          </div>
-          <table style={{ 
-            width: '100%', 
-            borderCollapse: 'collapse', 
-            backgroundColor: '#fff', 
-            border: '2px solid #ddd',
-            fontSize: '16px',
-            minHeight: '600px'
-          }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f4f4f4' }}>
-                <th style={{ 
-                  border: '2px solid #ddd', 
-                  padding: '12px', 
-                  textAlign: 'center'
-                }}>Day/Time</th>
-                {sortedTimes.map((time, index) => (
-                  <th key={index} style={{ 
-                    border: '2px solid #ddd', 
-                    padding: '12px', 
-                    backgroundColor: '#f9f9f9', 
-                    textAlign: 'center'
-                  }}>
-                    {time}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedDays.map(day => (
-                <tr key={day}>
-                  <td style={{ 
-                    border: '2px solid #ddd', 
-                    padding: '12px', 
-                    fontWeight: 'bold', 
-                    textAlign: 'center'
-                  }}>{day}</td>
-                  {sortedTimes.map((time, index) => {
-                    const classes = schedule.filter(item =>
-                      item.day_name === day && `${item.start_time} - ${item.end_time}` === time
-                    );
-                    return (
-                      <td key={index} style={{ 
-                        border: '2px solid #ddd', 
-                        padding: '7px', 
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        textAlign: 'center'
-                      }}>
-                        {classes.length > 0 ? (
-                          classes.map((item, idx) => (
-                            <div key={idx}>
-                              <div>{item.subject_name}</div>
-                              <div>{item.faculty_name}</div>
-                              <div>S{item.semester_id}</div>
-                            </div>
-                          ))
-                        ) : (
-                          <div>-</div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </>
-    
+    <div className="container">
+      <div className="header-i">
+        <h2>Lab Name : {props.subjectName}</h2>
+      </div>
+      <table className="table">
+        <thead>
+          <tr>
+            <th className="day-time">Day/Time</th>
+            {sortedTimes.map((time, index) => (
+              <th key={index} className="time">
+                {time}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sortedDays.map(day => (
+            <tr key={day}>
+              <td className="day">{day}</td>
+              {sortedTimes.map((time, index) => {
+                const classes = schedule.filter(item =>
+                  item.day_name === day && `${item.start_time} - ${item.end_time}` === time
+                );
+                return (
+                  <td key={index} className="subject">
+                    {classes.length > 0 ? (
+                      classes.map((item, idx) => (
+                        <div key={idx}>
+                          <div>{item.subject_name}</div>
+                          <div>{item.faculty_name}</div>
+                          <div>S{item.semester_id}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div>-</div>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

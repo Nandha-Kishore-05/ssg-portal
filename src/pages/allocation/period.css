@@ -45,6 +45,7 @@
     font-weight: 300;
     font-style: bold;
     width: 100px;
+    height: 40px;
   }
   
   
@@ -92,6 +93,7 @@
   .table-cell {
     border: 1px solid #ddd;
     padding: 10px;
+    text-align: center;
   }
   
   /* Submit button */
@@ -103,6 +105,7 @@
     border-radius: 5px;
     cursor: pointer;
     margin-right: 10px;
+ 
   }
   
   /* attendance.css */

@@ -248,7 +248,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 	}
 }
 
-// IsPeriodAvailable checks if a period is available for a faculty member in the existing timetable
+
 func IsPeriodAvailable(existingTimetable map[string]map[string][]models.TimetableEntry, dayName, startTime, facultyName string) bool {
 	if _, ok := existingTimetable[facultyName]; ok {
 		if entries, ok := existingTimetable[facultyName][dayName]; ok {
@@ -271,7 +271,7 @@ func Available(existingTimetable map[string]map[string][]models.TimetableEntry, 
 	return true
 }
 
-// CheckTimetableConflicts checks if the generated timetable conflicts with the existing timetable
+
 func CheckTimetableConflicts(generatedTimetable FacultyBasedTimetable, existingTimetable map[string]map[string][]models.TimetableEntry) bool {
 	for facultyName, days := range generatedTimetable {
 		for dayName, entries := range days {
@@ -365,7 +365,7 @@ func generateRandomTimetable(
 
 					if subject.Status == 0 {
 						// Check if the next period is available for continuous assignment
-						fmt.Printf("Subject DepartmentID: %d\n", subject.DepartmentID)
+						///fmt.Printf("Subject DepartmentID: %d\n", subject.DepartmentID)
 
 						if i < len(hours)-1 {
 							nextStartTime := hours[i+1].StartTime
@@ -409,8 +409,7 @@ func generateRandomTimetable(
 							}
 						}
 					} else {
-						// Assign status 1 subjects to a single period
-						fmt.Printf("Subject DepartmentID: %d\n", subject.DepartmentID)
+					
 						entry := models.TimetableEntry{
 							DayName:     day.DayName,
 							StartTime:   startTime,

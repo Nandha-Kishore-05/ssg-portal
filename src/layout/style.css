@@ -1,5 +1,5 @@
 .app-sidebar {
-    background-color: rgb(52, 58, 64);;
+    background-color: rgb(35,39,43);
     width: 280px;
     height: 100%;
     padding-top: 20px;
@@ -28,6 +28,7 @@
   
   .sidebar-menu {
     margin-top: 20px;
+    padding: 0px 5px;
   }
   
   .sidebar-menu-item {
@@ -35,8 +36,8 @@
     gap: 10px;
     align-items: center;
     padding: 15px 30px;
-    color: #6b6b6d;
-  
+    color: rgba(207, 206, 206, 0.904);
+    margin: 3%;
   }
   
   .sidebar-menu-item h4 {
@@ -46,9 +47,9 @@
   .sidebar-menu-item:hover,
   .sidebar-selected {
     background-color: rgb(108, 117, 125);
-    color: white;
+    color: rgb(255, 255, 255);
     cursor: pointer;
-    margin: 3%;
+
     border-radius: 6px;
   }
   

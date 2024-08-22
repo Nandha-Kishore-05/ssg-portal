@@ -1,12 +1,14 @@
+/* FacultyTimetable.css */
+
 .container {
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     margin: 20px 0;
   }
   
-  .header-1 {
+  .header-k {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -16,17 +18,13 @@
   .header-info {
     display: flex;
     flex-direction: row;
-    column-gap: 10px;
+    column-gap: 15px;
   }
   
   .header-info h2 {
     font-size: 20px;
     margin-top: 5px;
-  
-  
   }
-  
-  
   
   .buttons {
     display: flex;
@@ -38,7 +36,7 @@
     width: 100%;
     border-collapse: collapse;
     background-color: #ffffff;
-    border: 2px solid #dedede;
+    border: 2px solid #ddd;
     font-size: 16px;
     min-height: 600px;
     margin-bottom: 20px;
@@ -47,11 +45,9 @@
     overflow: hidden;
   }
   
- 
-  
   .table th {
-    border: 2px solid #dedede;
-    padding: 14px;
+    border: 2px solid #ddd;
+    padding: 12px;
     text-align: center;
   }
   
@@ -74,15 +70,13 @@
   }
   
   .table td {
-    border: 2px solid #dedede;
-    padding: 14px;
+    border: 2px solid #ddd;
+    padding: 12px;
     text-align: center;
-    color: #212529;
-    font-weight: 800;
   }
   
   .table td.day {
-
+    font-weight: 700;
     background-color: #6c757d;
     color: #ffffff;
   }
@@ -92,6 +86,5 @@
     padding: 10px;
     color: black;
     border-radius: 5px;
-   
   }
   

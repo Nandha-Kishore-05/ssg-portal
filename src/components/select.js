@@ -8,6 +8,7 @@ function CustomSelect(props) {
       style={{
         marginTop: props.margin ? props.margin :null,
         flex: !props.widthFull ? 3 : null,
+    
       }}
     >
       {props.label ? <label>{props.label}</label> : null}

@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { DashboardRounded, LogoutRounded } from "@mui/icons-material";
+import { DashboardRounded, TableChartRounded, ClassRounded, GroupRounded, ScienceRounded, ScheduleRounded } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
@@ -16,32 +16,32 @@ function SideBar(props) {
     },
     {
         id: 2,
-        icon: <DashboardRounded />,
-        label: "TimeTable",
+        icon: <TableChartRounded />,
+        label: "Time Table",
         path: "/timetable",
       },
       {
         id: 3,
-        icon: <DashboardRounded />,
-        label: "VenueTable",
+        icon: <ClassRounded />,
+        label: "Venue Table",
         path: "/timetable/saved",
       },
       {
         id: 4,
-        icon: <DashboardRounded />,
-        label: "FacultyTable",
+        icon: <GroupRounded />,
+        label: "Faculty Table",
         path: "/timetable/faculty",
       },
       {
         id: 5,
-        icon: <DashboardRounded />,
-        label: "LabTable",
+        icon:  <ScienceRounded />,
+        label: "Lab Table",
         path: "/timetable/lab",
       },
       {
         id: 6,
-        icon: <DashboardRounded />,
-        label: "Period Allocation",
+        icon: <ScheduleRounded />,
+        label:"Period Allocation",
         path: "/timetable/periodallocation",
       },
 
@@ -59,15 +59,12 @@ function SideBar(props) {
     }
   };
 
-  // useEffect(() => {
-  //   setOpenSubMenuId(props.rId);
-  // }, []); 
-
+ 
   return (
     <div className="app-sidebar">
       <div className="sidebar-header">
       
-        <h2 style={{fontSize:"28",color:"white"}}> TT PORTAL </h2>
+        <h2 style={{fontSize:"28",color:"white"}}>  TT PORTAL </h2>
       </div>
 
       <div className="sidebar-menu">

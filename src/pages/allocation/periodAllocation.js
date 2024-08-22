@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { Modal, Fade, Button } from "@mui/material";
-import "./style.css";
+import "./period.css";
 
 const PeriodAllocation = () => {
   const [excelData, setExcelData] = useState([]);
@@ -78,7 +78,7 @@ const PeriodAllocation = () => {
           />
           <div className="upload-section">
             <center><br />
-              <h3>Here you can upload the Period Allocation list</h3>
+              <h2>Here you can upload the Period Allocation list</h2>
               <button
                 className="upload-button"
                 onClick={() => document.querySelector('.file-upload-input').click()}
