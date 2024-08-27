@@ -356,21 +356,21 @@ import FacultyTimetable from './facultytable';
 
 const FacTimetable = () => {
   const [facultyData, setFacultyData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]); // Initialized as an empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [selectedFaculty, setSelectedFaculty] = useState(null); // State to track selected faculty
-  const [isOpen, setIsOpen] = useState(false); // State to track if timetable is open
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedFaculty, setSelectedFaculty] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get(`http://localhost:8080/timetable/facultyOptions`);
-        setFacultyData(response.data);
-        setFilteredData(response.data);
+        setFacultyData(response.data || []); // Ensure data is an array
+        setFilteredData(response.data || []); // Ensure filteredData is an array
         setLoading(false);
       } catch (err) {
         setError('Error fetching faculty data');
@@ -399,26 +399,25 @@ const FacTimetable = () => {
     }
   };
 
-  
-
   // Pagination logic
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
+  const currentRows = Array.isArray(filteredData) ? filteredData.slice(indexOfFirstRow, indexOfLastRow) : [];
+
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-
-  if (selectedFaculty  && isOpen) {
+  if (selectedFaculty && isOpen) {
     return (
       <AppLayout
         rId={4}
-       title="Faculty Table"
+        title="Faculty Table"
         body={
           <FacultyTimetable facultyName={selectedFaculty.value} />
         }
       />
     );
   }
+
   return (
     <AppLayout
       rId={4}
@@ -486,25 +485,23 @@ const FacTimetable = () => {
                 <option value={100}>100</option>
               </select>
               <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="dashboard-pagination-button"
-                  aria-label="Previous Page"
-                >
-                  <ArrowBackIosRounded fontSize="small" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={indexOfLastRow >= filteredData.length}
-                  className="dashboard-pagination-button"
-                  aria-label="Next Page"
-                >
-                  <ArrowForwardIosRounded fontSize="small" />
-                </button>
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="dashboard-pagination-button"
+                aria-label="Previous Page"
+              >
+                <ArrowBackIosRounded fontSize="small" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={indexOfLastRow >= filteredData.length}
+                className="dashboard-pagination-button"
+                aria-label="Next Page"
+              >
+                <ArrowForwardIosRounded fontSize="small" />
+              </button>
             </div>
           </div>
-          
-     
         </div>
       }
     />

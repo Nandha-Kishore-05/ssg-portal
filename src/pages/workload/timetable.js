@@ -356,8 +356,10 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SearchIcon from '@mui/icons-material/Search';
 import './save.css';
+import { useNavigate } from 'react-router-dom';
 
 const SavedTimetable = (props) => {
+  const navigate = useNavigate();
   const [schedule, setSchedule] = useState([]);
   const [days, setDays] = useState([]);
   const [times, setTimes] = useState([]);
@@ -480,15 +482,19 @@ const SavedTimetable = (props) => {
 
   const handleSaveTimetable = async () => {
     console.log("Attempting to save timetable:", schedule);
-    try {
-      const response = await axios.put('http://localhost:8080/timetable/update', schedule);
-      console.log("Response from server:", response.data);
-      toast.success('Timetable updated successfully!');
-    } catch (error) {
-      console.error('Failed to update timetable:', error);
-      toast.error('Failed to update timetable');
-    }
+  
+    await axios.put('http://localhost:8080/timetable/update', schedule)
+      .then(response => {
+        console.log("Response from server:", response.data);
+        toast.success('Timetable updated successfully!');
+      props.setIsOpen(false)
+      })
+      .catch(error => {
+        console.error('Failed to update timetable:', error);
+        toast.error('Failed to update timetable');
+      });
   };
+  
 
   const filteredFaculty = availableFaculty.filter(faculty =>
     faculty.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

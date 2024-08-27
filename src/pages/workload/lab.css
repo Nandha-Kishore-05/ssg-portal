@@ -172,6 +172,7 @@
   .lab-timetable-pagination-right {
     display: flex;
     align-items: center;
+   
   }
   
   .lab-timetable-pagination-dropdown {
@@ -182,7 +183,7 @@
     border: 1px solid #ddd;
   }
   
-  .lab-timetable-pagination-button {
+  .lab-pagination-button{
     background-color: transparent;
     border: none;
     cursor: pointer;

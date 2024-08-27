@@ -94,4 +94,11 @@
     border-radius: 5px;
    
   }
-  
+  .saveButton{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 20px;
+  justify-content: space-around;
+  column-gap: 10px;
+  }

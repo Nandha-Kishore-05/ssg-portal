@@ -65,33 +65,34 @@
 // export default Lab;
 
 
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './lab.css'; // Make sure this CSS file is properly linked
 import AppLayout from '../../layout/layout';
 import { ArrowBackIosRounded, ArrowForwardIosRounded, VisibilityRounded } from '@mui/icons-material';
- import LabTimetable from './labtable';
+import LabTimetable from './labtable';
 
 const Lab = () => {
   const [labData, setLabData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]); // Initialized as an empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(8);
-  const [selectedLab, setSelectedLab] = useState(null); // State to track selected faculty
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedLab, setSelectedLab] = useState(null); // State to track selected lab
   const [isOpen, setIsOpen] = useState(false); // State to track if timetable is open
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get(`http://localhost:8080/timetable/labOptions`);
-        setLabData(response.data);
-        setFilteredData(response.data);
+        setLabData(response.data || []);
+        setFilteredData(response.data || []) ;
         setLoading(false);
       } catch (err) {
-        setError('Error fetching faculty data');
+        setError('Error fetching lab data');
         setLoading(false);
       }
     };
@@ -104,11 +105,11 @@ const Lab = () => {
       item.label && item.label.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredData(results);
-    setCurrentPage(1); // Reset to first page when search term changes
+    setCurrentPage(1); // Reset to the first page when search term changes
   }, [searchTerm, labData]);
 
   const handleActionClick = (lab) => {
-    // If the same faculty is clicked again, toggle the timetable display
+    // If the same lab is clicked again, toggle the timetable display
     if (selectedLab && selectedLab.value === lab.value) {
       setIsOpen(!isOpen);
     } else {
@@ -117,26 +118,22 @@ const Lab = () => {
     }
   };
 
-  
-
   // Pagination logic
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+  const currentRows = Array.isArray(filteredData) ? filteredData.slice(indexOfFirstRow, indexOfLastRow) : [];
+  const totalPages = Math.ceil((filteredData?.length || 0) / rowsPerPage);
 
-
-  if (selectedLab  && isOpen) {
+  if (selectedLab && isOpen) {
     return (
       <AppLayout
         rId={5}
-       title="Lab Table"
-        body={
-          <LabTimetable subjectName ={selectedLab.value} />
-        }
+        title="Lab Table"
+        body={<LabTimetable subjectName={selectedLab.value} />}
       />
     );
   }
+
   return (
     <AppLayout
       rId={5}
@@ -146,10 +143,10 @@ const Lab = () => {
           <div className="lab-timetable-header">
             <input
               type="text"
-              placeholder="Search by faculty name..."
+              placeholder="Search by lab name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="faculty-timetable-search-input"
+              className="lab-timetable-search-input"
             />
           </div>
           <table className="lab-timetable-table">
@@ -198,31 +195,29 @@ const Lab = () => {
                 }}
                 className="lab-timetable-pagination-dropdown"
               >
-                <option value={10}>10</option>
+                <option value={8}>8</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
               </select>
               <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="lab-pagination-button"
-                  aria-label="Previous Page"
-                >
-                  <ArrowBackIosRounded fontSize="small" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={indexOfLastRow >= filteredData.length}
-                  className="lab-pagination-button"
-                  aria-label="Next Page"
-                >
-                  <ArrowForwardIosRounded fontSize="small" />
-                </button>
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="lab-pagination-button"
+                aria-label="Previous Page"
+              >
+                <ArrowBackIosRounded fontSize="small" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={indexOfLastRow >= filteredData.length}
+                className="lab-pagination-button"
+                aria-label="Next Page"
+              >
+                <ArrowForwardIosRounded fontSize="small" />
+              </button>
             </div>
           </div>
-          
-     
         </div>
       }
     />

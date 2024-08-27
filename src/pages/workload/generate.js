@@ -7,7 +7,10 @@ import CustomSelect from '../../components/select';
 import CustomButton from '../../components/button';
 import Timetable from './workload';
 
+
 const GenerateTimetable = () => {
+ 
+
   const [department, setDepartment] = useState(null);
   const [deptOptions, setDeptOptions] = useState([]);
   const [semester, setSemester] = useState(null);
