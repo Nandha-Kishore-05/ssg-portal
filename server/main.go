@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -29,5 +28,6 @@ func main() {
 	r.POST("/upload", timetables.Uploaddetails)
 	r.GET("faculty/available/:departmentID/:semesterID/:day/:startTime/:endTime", timetables.GetAvailableFaculty)
 	r.GET("/saved/deptoptions", timetables.SavedDepartmentOptions)
+	r.PUT("/timetable/update", timetables.UpdateTimetable)
 	r.Run(":8080")
 }

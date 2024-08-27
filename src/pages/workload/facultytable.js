@@ -52,7 +52,7 @@ const FacultyTimetable = (props) => {
   });
 
   return (
-    <div className="container">
+    <div className="container-2">
       <div className="header-k">
         <div className="header-info">
           <h2>Faculty: {props.facultyName}</h2>
@@ -83,6 +83,7 @@ const FacultyTimetable = (props) => {
                       classes.map((item, idx) => (
                         <div key={idx}>
                           <div>{item.classroom}</div>
+                          {/* <div>{item.subject_name}</div> */}
                           <div>S{item.semester_id}</div>
                         </div>
                       ))

@@ -3,6 +3,7 @@ import "./style.css";
 import { DashboardRounded, TableChartRounded, ClassRounded, GroupRounded, ScienceRounded, ScheduleRounded } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import EventIcon from '@mui/icons-material/Event';
 
 function SideBar(props) {
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
@@ -14,16 +15,11 @@ function SideBar(props) {
       label: "Dashboard",
       path: "/dashboard",
     },
-    {
-        id: 2,
-        icon: <TableChartRounded />,
-        label: "Time Table",
-        path: "/timetable",
-      },
+  
       {
         id: 3,
-        icon: <ClassRounded />,
-        label: "Venue Table",
+        icon: <EventIcon />,
+        label: "Time Table",
         path: "/timetable/saved",
       },
       {

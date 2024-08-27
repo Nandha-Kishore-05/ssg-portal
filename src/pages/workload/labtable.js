@@ -47,7 +47,7 @@ const LabTimetable = (props) => {
   const sortedTimes = allTimes.sort((a, b) => timeOrder.indexOf(a) - timeOrder.indexOf(b));
 
   return (
-    <div className="container">
+    <div className="container-3">
       <div className="header-i">
         <h2>Lab Name : {props.subjectName}</h2>
       </div>

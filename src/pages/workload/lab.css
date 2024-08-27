@@ -1,11 +1,12 @@
 
 
-.container {
+.container-3 {
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     margin: 20px 0;
+    margin-top: 35px;
   }
   
   .header-i {
@@ -81,4 +82,119 @@
     color: black;
     border-radius: 5px;
   }
+  
+  .lab-timetable-container {
+    background-color: white;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 10px;
+  }
+  
+  .lab-timetable-header {
+    margin-bottom: 20px;
+  }
+  
+  .lab-timetable-search-input {
+    width: 300px;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .lab-timetable-search-input:focus {
+    outline: none;
+    border: 2.5px solid #2a8ef9;
+  }
+  
+  .lab-timetable-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+  }
+  
+  .lab-timetable-head {
+    background-color: #343a40;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .lab-timetable-head td {
+    padding: 20px;
+    border: 1px solid #343a40;
+    text-align: center;
+  }
+  
+  .lab-timetable-head td:first-child {
+    border-top-left-radius: 10px;
+  }
+  
+  .lab-timetable-head td:last-child {
+    border-top-right-radius: 10px;
+  }
+  
+  .lab-timetable-cell {
+    padding: 20px 10px;
+   border-bottom: 1px solid #3334348a;
+    text-align: center;
+    font-size: 18px;
+    color: #333333;
+    font-weight: 800;
+  }
+  
+  
+  
+ 
+  
+  .lab-timetable-pagination {
+    display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  background-color: #343a40;
+ padding-left: 15px;
+ border-bottom-left-radius: 10px; 
+  border-bottom-right-radius: 10px;
+  }
+  
+  .lab-timetable-pagination-text {
+    
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  }
+  
+  .lab-timetable-pagination-right {
+    display: flex;
+    align-items: center;
+  }
+  
+  .lab-timetable-pagination-dropdown {
+    margin-left: 10px;
+    padding: 5px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+  
+  .lab-timetable-pagination-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    margin-left: 10px;
+    color: #ffffff;
+  }
+
+  .lab-timetable-body tr:last-child .lab-timetable-cell {
+    border-bottom: none;
+  }
+  
+  
+ 
   

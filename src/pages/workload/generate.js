@@ -48,7 +48,7 @@ const GenerateTimetable = () => {
 
   return (
     <AppLayout
-      rId={2}
+      rId={3}
       title="Time Table"
       body={
         <div style={{ backgroundColor: "white", padding: 17, marginTop: 20, borderRadius: "10px" }}>
