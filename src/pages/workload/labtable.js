@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { utils, writeFile } from 'xlsx'; // Import xlsx functions
 import './lab.css'; // Import the CSS file
+import CustomButton from '../../components/button';
 
 const LabTimetable = (props) => {
   const [schedule, setSchedule] = useState([]);
@@ -46,10 +48,45 @@ const LabTimetable = (props) => {
   const allTimes = Array.from(new Set(schedule.map(item => `${item.start_time} - ${item.end_time}`)));
   const sortedTimes = allTimes.sort((a, b) => timeOrder.indexOf(a) - timeOrder.indexOf(b));
 
+  // Function to handle the download as Excel
+  const downloadTimetableAsExcel = () => {
+    const wsData = [
+      ['Day/Time', ...sortedTimes], // Header row with time slots
+    ];
+
+    sortedDays.forEach(day => {
+      const row = [day];
+      sortedTimes.forEach(time => {
+        const classes = schedule.filter(item =>
+          item.day_name === day && `${item.start_time} - ${item.end_time}` === time
+        );
+        if (classes.length > 0) {
+          row.push(classes.map(item => `${item.subject_name} - ${item.faculty_name} - S${item.semester_id}`).join('\n'));
+        } else {
+          row.push('-');
+        }
+      });
+      wsData.push(row);
+    });
+
+    const ws = utils.aoa_to_sheet(wsData); // Create sheet from array of arrays
+    const wb = utils.book_new(); // Create a new workbook
+    utils.book_append_sheet(wb, ws, 'Lab Timetable'); // Append sheet to workbook
+
+    writeFile(wb, `${props.subjectName}_LabTimetable.xlsx`); // Download the workbook
+  };
+
   return (
     <div className="container-3">
       <div className="header-i">
         <h2>Lab Name : {props.subjectName}</h2>
+        <div className="buttons">
+          <CustomButton
+            width="150"
+            label="Download Timetable"
+            onClick={downloadTimetableAsExcel} // Trigger download on button click
+          />
+        </div>
       </div>
       <table className="table">
         <thead>

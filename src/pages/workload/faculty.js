@@ -438,6 +438,7 @@ const FacTimetable = () => {
               <tr>
                 <td>S.No</td>
                 <td>Faculty Name</td>
+                <td>Faculty ID</td>
                 <td>Action</td>
               </tr>
             </thead>
@@ -447,6 +448,7 @@ const FacTimetable = () => {
                   <tr key={`${item.value}-${index}`} className="faculty-timetable-row">
                     <td className="faculty-timetable-cell">{indexOfFirstRow + index + 1}</td>
                     <td className="faculty-timetable-cell">{item.label}</td>
+                    <td className="faculty-timetable-cell">{item.id}</td>
                     <td className="faculty-timetable-cell">
                       <VisibilityRounded
                         className="dashboard-view-icon"

@@ -1,87 +1,167 @@
+.auth-container {
+  width: 900px;
+  background-color: #1a1a1a; /* Black theme background */
+  display: flex;
+ margin-top: 12%;
+ margin-left: 25%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* Darker shadow */
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: 'Nunito', sans-serif;
+  color: #f1f1f1; /* Light text color */
+  height: 400px;
 
-  
-  .login-container {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-    padding: 40px;
-    text-align: center;
-    width: 360px;
-    max-width: 100%;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .login-container:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
-  }
-  
-  .login-container h1 {
-    margin-bottom: 20px;
-    font-size: 28px;
-    color: #333;
-    font-weight: 600;
-  }
-  
-  .login-form {
-    display: flex;
+}
+
+.auth-form-container {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 50%;
+}
+
+.auth-form h1 {
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #f1f1f1; /* Light text color */
+}
+
+.social-container {
+  margin: 20px 0;
+}
+
+.social {
+  border: 1px solid #444; /* Darker borders */
+  border-radius: 50%;
+  padding: 10px;
+  margin: 0 10px;
+  display: inline-block;
+  font-size: 14px;
+  text-decoration: none;
+  color: #f1f1f1;
+}
+
+span {
+  font-size: 14px;
+  margin-bottom: 10px;
+  display: block;
+  color: #f1f1f1; /* Light text color */
+}
+
+.auth-input {
+  background-color: #333; /* Darker input background */
+  border: none;
+  padding: 12px;
+  margin: 8px 0;
+  width: 100%;
+  border-radius: 5px;
+  color: #f1f1f1; /* Light text color */
+}
+
+.forgot-link {
+  color: #ff4b2b; /* Red for forgotten password */
+  font-size: 12px;
+  margin-bottom: 10px;
+  text-align: right;
+  display: block;
+  text-decoration: none;
+}
+
+.auth-btn {
+  background-color: #ff4b2b; /* Bright button color */
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  margin-top: 8px;
+}
+
+.auth-btn:hover {
+  background-color: #ff6a4b; /* Lighter hover effect */
+}
+
+.auth-overlay-container {
+  width: 50%;
+  background: linear-gradient(to right, #333, #444); /* Dark gradient background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.auth-overlay {
+  padding: 40px;
+}
+
+.auth-overlay h1 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.auth-overlay p {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.auth-overlay button {
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.auth-overlay button:hover {
+  background-color: white;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .auth-container {
     flex-direction: column;
-    align-items: center;
+    width: 100%;
   }
-  
-  .google-button {
-    background-color: #4285F4;
-    color: white;
-    border: none;
-    padding: 14px 30px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+
+  .auth-form-container, .auth-overlay-container {
+    width: 100%;
   }
-  
-  .google-button:hover {
-    background-color: #357AE8;
-    transform: scale(1.03);
-  }
-  
-  .google-button img {
-    width: 24px;
-    height: 24px;
-  }
-  
-  .login-container p {
-    margin-top: 20px;
-    color: #555;
-  }
-  
-  .login-container a {
-    color: #4285F4;
-    text-decoration: none;
-    font-weight: bold;
-  }
-  
-  .login-container a:hover {
-    text-decoration: underline;
-  }
-  
-  .create-account {
-    margin-top: 20px;
-    font-size: 16px;
-    color: #333;
-  }
-  
-  .create-account a {
-    color: #4285F4;
-    text-decoration: none;
-    font-weight: bold;
-  }
-  
-  .create-account a:hover {
-    text-decoration: underline;
-  }
-  
+}
+body{
+  background-color: #a2a1a1ae;
+}
+/* Google Sign-In button styling */
+.google-signin-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4285f4; /* Google blue */
+  color: white;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  width: 220px;
+  margin: 10px auto;
+  transition: background-color 0.3s ease;
+}
+
+.google-signin-button:hover {
+  background-color: #357ae8; /* Darker blue on hover */
+}
+
+.google-icon {
+  display: inline-block;
+  font-size: 20px;
+  margin-right: 10px;
+  font-weight: bold;
+}
+

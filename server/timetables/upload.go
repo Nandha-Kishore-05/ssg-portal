@@ -11,7 +11,7 @@ import (
 )
 
 func Uploaddetails(c *gin.Context) {
-	// Assuming the data is received as a JSON array
+
 	var records []map[string]interface{}
 	if err := c.BindJSON(&records); err != nil {
 		c.String(http.StatusBadRequest, "Invalid JSON data: %s", err.Error())
@@ -19,7 +19,7 @@ func Uploaddetails(c *gin.Context) {
 	}
 
 	for _, row := range records {
-		// Extract data from the row
+	
 
 		department, ok := row["Department"].(string)
 		if !ok {
@@ -33,13 +33,13 @@ func Uploaddetails(c *gin.Context) {
 			return
 		}
 
-		// Handle the "Lab-subject" field
-		status := "1" // Default status to "no"
+	
+		status := "1" 
 		if labSubject, ok := row["Lab-subject"].(string); ok && labSubject == "YES" {
 			status = "0"
 		}
 
-		// Handle "Periods" field, which might be a number (float64)
+	
 		var periods int
 		switch v := row["Periods"].(type) {
 		case string:
@@ -51,7 +51,7 @@ func Uploaddetails(c *gin.Context) {
 			return
 		}
 
-		// Handle "Semester" field, which might also be a number (float64)
+
 		var semester int
 		switch v := row["Semester"].(type) {
 		case string:
@@ -75,28 +75,28 @@ func Uploaddetails(c *gin.Context) {
 			return
 		}
 
-		// Get Department ID
+	
 		deptID, err := getDepartmentID(department)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Department ID error: %s", err.Error())
 			return
 		}
 
-		// Get Faculty ID
+
 		facultyID, err := getFacultyID(faculty, deptID)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Faculty ID error: %s", err.Error())
 			return
 		}
 
-		// Insert into subjects table
+	
 		subjectID, err := getOrCreateSubject(subject, deptID, semester, status, periods)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Subject insertion error: %s", err.Error())
 			return
 		}
 
-		// Insert into faculty_subjects table
+	
 		_, err = config.Database.Exec(`INSERT INTO faculty_subjects (faculty_id, subject_id, semester_id) VALUES (?, ?, ?)`,
 			facultyID, subjectID, semester)
 		if err != nil {
@@ -104,7 +104,7 @@ func Uploaddetails(c *gin.Context) {
 			return
 		}
 
-		// Insert into classrooms (venue)
+	
 		_, err = getOrCreateVenue(venue, deptID,semester)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Classroom insertion error: %s", err.Error())
@@ -168,7 +168,7 @@ func getOrCreateVenue(name string, departmentID int,semesterID int) (int, error)
 	var id int
 	err := config.Database.QueryRow("SELECT id FROM classrooms WHERE name = ?", name).Scan(&id)
 	if err == sql.ErrNoRows {
-		// Classroom does not exist, so create a new one with the correct department ID
+
 		res, err := config.Database.Exec("INSERT INTO classrooms (name, department_id,semester_id) VALUES (?, ?,?)", name, departmentID,semesterID)
 		if err != nil {
 			return 0, err

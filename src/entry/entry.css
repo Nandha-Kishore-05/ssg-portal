@@ -1,0 +1,70 @@
+.manual-container {
+    background-color: #fff;
+    padding: 40px;
+    margin: 20px auto;
+ 
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.form-group .input-box,
+.form-group .custom-select {
+    width: 100%;
+}
+
+.center-button {
+    text-align: center;
+    margin-top: 20px;
+}
+.bulk-button{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+}
+.row{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 15px;  
+}
+.modal-box {
+    width: 100%;
+    max-width: 400px;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 0 50px;
+    margin-top: 300px;
+    margin-left: 780px;
+    text-align: center;
+}
+
+.center-button {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.modal-title {
+    font-weight: bold;
+    font-size: 18px;
+    color: #161616;
+}
+
+.modal-description {
+    margin-top: 12px;
+    font-size: 1rem;
+    color: #666;
+}

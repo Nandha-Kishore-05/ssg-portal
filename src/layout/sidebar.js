@@ -1,107 +1,95 @@
-import "./style.css";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import {
+  DashboardRounded,
+  Event as EventIcon,
+  GroupRounded,
+  ScienceRounded,
+  ScheduleRounded,
+  Edit as EditIcon,
+} from '@mui/icons-material';
+import LogoutIcon from '@mui/icons-material/Logout';
+import './style.css';
+import { Book } from "@mui/icons-material";
 
-import { DashboardRounded, TableChartRounded, ClassRounded, GroupRounded, ScienceRounded, ScheduleRounded } from "@mui/icons-material";
-import { Link } from "react-router-dom";
-import { useState } from "react";
-import EventIcon from '@mui/icons-material/Event';
 
 function SideBar(props) {
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
+  const [menu, setMenu] = useState([]);
 
-  const menu = [
-    {
-      id: 1,
-      icon: <DashboardRounded />,
-      label: "Dashboard",
-      path: "/dashboard",
-    },
-  
-      {
-        id: 3,
-        icon: <EventIcon />,
-        label: "Time Table",
-        path: "/timetable/saved",
-      },
-      {
-        id: 4,
-        icon: <GroupRounded />,
-        label: "Faculty Table",
-        path: "/timetable/faculty",
-      },
-      {
-        id: 5,
-        icon:  <ScienceRounded />,
-        label: "Lab Table",
-        path: "/timetable/lab",
-      },
-      {
-        id: 6,
-        icon: <ScheduleRounded />,
-        label:"Period Allocation",
-        path: "/timetable/periodallocation",
-      },
+  useEffect(() => {
+    const fetchResources = async () => {
+      const authToken = localStorage.getItem('authToken'); 
 
+      try {
+        const response = await axios.get('http://localhost:8080/getResource', {
+          headers: {
+            Authorization: `${authToken}`, // Use the actual token here
+          },
+        });
 
+        // Transform fetched data into menu items
+        const fetchedMenu = response.data.data.map((resource) => ({
+          id: resource.id,
+          label: resource.name,
+          path: resource.path,
+        }));
+        setMenu(fetchedMenu);
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      }
+    };
 
-  
-    
-  ];
+    fetchResources();
+  }, []);
 
-  const toggleSubMenu = (id) => {
-    if (openSubMenuId === id) {
-      setOpenSubMenuId(null);
-    } else {
-      setOpenSubMenuId(id);
+  // Define a mapping between resource labels and icons
+  const getIcon = (label) => {
+    switch (label) {
+      case 'Dashboard':
+        return <DashboardRounded />;
+      case 'Time Table':
+        return <EventIcon />;
+      case 'Faculty Table':
+        return <GroupRounded />;
+      case 'Lab Table':
+        return <ScienceRounded />;
+      case 'Period Allocation':
+        return <ScheduleRounded />;
+      case 'Manual Entry':
+        return <EditIcon />;
+        case 'Subject Entry':
+          return   <Book />
+        case 'Log Out':
+          return  <LogoutIcon />
+         
+      default:
+        return null; // Return null if no matching icon
     }
   };
 
- 
+  const toggleSubMenu = (id) => {
+    setOpenSubMenuId(openSubMenuId === id ? null : id);
+  };
+
   return (
     <div className="app-sidebar">
       <div className="sidebar-header">
-      
-        <h2 style={{fontSize:"28",color:"white"}}>  TT PORTAL </h2>
+        <h2 style={{ fontSize: '28px', color: 'white' }}>TT PORTAL</h2>
       </div>
-
       <div className="sidebar-menu">
         {menu.map((item, i) => (
           <div key={i}>
-            <Link
-              style={{ textDecoration: "none" }}
-              to={
-                item.submenu === undefined || item.submenu.length === 0
-                  ? item.path
-                  : ""
-              }
-            >
+            <Link style={{ textDecoration: 'none' }} to={item.path}>
               <div
                 onClick={() => toggleSubMenu(item.id)}
-                className={
-                  props.rId === item.id
-                    ? "sidebar-menu-item sidebar-selected"
-                    : "sidebar-menu-item"
-                }
+                className={props.rId === item.id ? 'sidebar-menu-item sidebar-selected' : 'sidebar-menu-item'}
               >
-                {item.icon}
+                {getIcon(item.label)} {/* Display the icon */}
                 <h4>{item.label}</h4>
               </div>
             </Link>
-            {item.submenu && ( item.id === props.rId || openSubMenuId === item.id) && (
-              <div className="submenu">
-                {item.submenu.map((subitem, j) => (
-                  <Link
-                    key={j}
-                    style={{ textDecoration: "none" }}
-                    to={subitem.path}
-                  >
-                    <div className="submenu-item">
-                      <div className="menu-dot"></div>
-                      <h4>{subitem.label}</h4>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
         ))}
       </div>

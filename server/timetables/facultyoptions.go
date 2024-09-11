@@ -3,11 +3,16 @@ package timetables
 import (
     "net/http"
     "github.com/gin-gonic/gin"
-	"ssg-portal/config"
+    "ssg-portal/config"
 )
 
 func FacultyOptions(c *gin.Context) {
-    rows, err := config.Database.Query("SELECT DISTINCT faculty_name FROM timetable")
+    query := `
+        SELECT DISTINCT t.faculty_name, f.faculty_id 
+        FROM timetable t
+        JOIN faculty f ON t.faculty_name = f.name
+    `
+    rows, err := config.Database.Query(query)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
@@ -16,14 +21,15 @@ func FacultyOptions(c *gin.Context) {
 
     var facultyOptions []map[string]string
     for rows.Next() {
-        var name string
-        if err := rows.Scan(&name); err != nil {
+        var name, facultyID string
+        if err := rows.Scan(&name, &facultyID); err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
         facultyOptions = append(facultyOptions, map[string]string{
             "label": name,
-            "value": name,
+            "value": name ,
+            "id": facultyID,  
         })
     }
 

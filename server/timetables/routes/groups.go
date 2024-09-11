@@ -82,15 +82,15 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-	// Generate timetable
-	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters,departmentID)
+
+	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, departmentID, semesterID)
 	if timetable == nil {
 		log.Printf("Error generating timetable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to generate timetable"})
 		return
 	}
 
-	// Send the timetable as JSON response
+
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, timetable)
 }

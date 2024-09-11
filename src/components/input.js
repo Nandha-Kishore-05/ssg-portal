@@ -4,7 +4,7 @@ function InputBox(props) {
   return (
     <div style={{ marginTop: props.margin }} className="input-box">
       <label>{props.label}</label>
-      <br />
+     
       <input
         placeholder={props.placeholder}
         type={props.type}

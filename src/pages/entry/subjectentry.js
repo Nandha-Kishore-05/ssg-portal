@@ -153,7 +153,7 @@ import { ArrowBackIosRounded, ArrowForwardIosRounded } from '@mui/icons-material
 import AppLayout from "../../layout/layout";
 import "./period.css";
 
-const PeriodAllocation = () => {
+const SubjectEntry = () => {
   const [excelData, setExcelData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10); // Default rows per page
@@ -218,7 +218,7 @@ const PeriodAllocation = () => {
   return (
     <AppLayout
       rId={6}
-      title="Period Allocation"
+      title="Subject Entry"
       body={
         <div>
           <input
@@ -229,7 +229,7 @@ const PeriodAllocation = () => {
           />
           <div className="upload-section">
             <center><br />
-              <h2>Here you can upload the Period Allocation list</h2>
+              <h2>Here you can upload the Subject Entry list</h2>
               <button
                 className="upload-button"
                 onClick={() => document.querySelector('.file-upload-input').click()}
@@ -333,4 +333,4 @@ const PeriodAllocation = () => {
   );
 };
 
-export default PeriodAllocation;
+export default SubjectEntry;
