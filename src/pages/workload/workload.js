@@ -336,7 +336,7 @@ const Timetable = (props) => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/${props.departmentID}/${props.semesterID}`);
+        const response = await axios.get(`http://localhost:8080/timetable/${props.departmentID}/${props.semesterID}/${props.academicYearID}`);
         const data = response.data;
 
         console.log('Fetched data:', data);
@@ -415,6 +415,7 @@ const Timetable = (props) => {
             status: entry.status,
             semester_id: entry.semester_id,
             department_id: entry.department_id,
+            academic_year_id : entry.academic_year_id
           };
           timetableData.push(data);
         });
@@ -491,6 +492,7 @@ const Timetable = (props) => {
             <div className="header-info">
               <h2 className="semester">Semester : S{props.semesterID}</h2>
               <h2 className="venue">Venue : {venue}</h2>
+              <h2 className="venue">Academic Year : {props.academicYearID}</h2>
             </div>
             <div className="buttons">
               <CustomButton

@@ -14,6 +14,7 @@ func GenerateTimetable(c *gin.Context) {
 	
 	departmentIDStr := c.Param("departmentID")
 	semesterIDStr := c.Param("semesterId")
+	academicYearIDStr := c.Param("academicYearID")
 
 
 
@@ -27,8 +28,20 @@ func GenerateTimetable(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid semester ID"})
 		return
 	}
+	academicYearID, err := strconv.Atoi(academicYearIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid semester ID"})
+		return
+	}
 
 	semesters, err := timetables.GetSemesterDetails(semesterID)
+	if err != nil {
+		log.Printf("Error getting semester details for ID %d: %v", semesterID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve semester details"})
+		return
+	}
+
+	academicYear, err := timetables.GetAcademicDetails(academicYearID)
 	if err != nil {
 		log.Printf("Error getting semester details for ID %d: %v", semesterID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve semester details"})
@@ -68,7 +81,7 @@ func GenerateTimetable(c *gin.Context) {
 	}
 
 
-	classrooms, err := timetables.GetClassrooms(departmentID, semesterID)
+	classrooms, err := timetables.GetClassrooms(departmentID, semesterID,academicYearID)
 	if err != nil {
 		log.Printf("Error getting classrooms for department ID %d: %v", departmentID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve classrooms"})
@@ -83,7 +96,7 @@ func GenerateTimetable(c *gin.Context) {
 	}
 
 
-	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, departmentID, semesterID)
+	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters,academicYear, departmentID, semesterID,academicYearID  )
 	if timetable == nil {
 		log.Printf("Error generating timetable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to generate timetable"})

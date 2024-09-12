@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-    "ssg-portal/config"
+	"ssg-portal/config"
 	"ssg-portal/timetables"
 	"ssg-portal/timetables/allocation"
 	"ssg-portal/timetables/auth"
+	"ssg-portal/timetables/excel"
 	"ssg-portal/timetables/manualentry"
 	"ssg-portal/timetables/otp"
 	"ssg-portal/timetables/role"
 	"ssg-portal/timetables/routes"
+    "github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -26,10 +27,10 @@ func main() {
     }))
 
     r.POST("/login", auth.Login)
-	r.GET("/timetable/:departmentID/:semesterId", routes.GenerateTimetable)
+	r.GET("/timetable/:departmentID/:semesterId/:academicYearID", routes.GenerateTimetable)
     r.POST("/timetable/save", timetables.SaveTimetable)
-	r.GET("/timetable/saved/:departmentID/:semesterId", timetables.GetTimetable)
-	r.GET("/timetable/faculty/:faculty_name", timetables.FacultyTimetable)
+	r.GET("/timetable/saved/:departmentID/:semesterId/:academicYearID", timetables.GetTimetable)
+	r.GET("/timetable/faculty/:faculty_name/:academicYearID", timetables.FacultyTimetable)
 	r.GET("/timetable/lab/:subject_name", timetables.LabTableTimetable)
 	r.GET("/timetable/facultyOptions", timetables.FacultyOptions)
 	r.GET("/timetable/labOptions", timetables.LabOptions)
@@ -41,12 +42,12 @@ func main() {
 	r.PUT("/timetable/update", timetables.UpdateTimetable)
 	r.GET("/manual/options", manualentry.DayAndTimeOptions)
     r.POST("/manual/submit", manualentry.SubmitManualEntry)
-	r.GET("/menuitems", timetables.GetMenuItems)
+	r.GET("/acdemicYearOptions", timetables.AcademicYearOptions)
 	r.GET("/periodallocation", allocation.Subjectallocation)
 	r.PUT("/periodallocationedit", allocation.UpdateAllocation)
-	
     r.GET("/getResource",role.GetResources)
 	r.POST("/send-otp",otp.SendOTPHandler)
 	r.POST("/verify-otp",otp.VerifyOTPHandler)
+	r.GET("/downloadTimetable", excel.DownloadTimetable)
 	r.Run(":8080")
 }

@@ -257,5 +257,65 @@ transition: color 0.3s ease;
   color: black;
 }
 
+.filter-dropdown {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); 
+  width: 220px; 
+  max-height: 350px; 
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 10px;
 
-  
+}
+
+
+.filter-dropdown div {
+  padding: 12px 20px;
+  cursor: pointer;
+ 
+  font-size: 15px;
+  color: #333;
+  font-weight: 500; 
+}
+
+
+.filter-dropdown div:hover {
+  background-color: #5cb9f7; 
+  color: white; 
+  border-radius: 6px; 
+}
+
+
+.filter-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filter-dropdown::-webkit-scrollbar-track {
+  background: #f0f0f0; 
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb {
+  background: #999; 
+  border-radius: 6px;
+}
+
+/* Filter icon */
+.filter-icon {
+  cursor: pointer;
+  vertical-align: middle;
+  margin-left: 16px;
+  font-size: 29px; 
+
+}
+
+.filter-icon:hover {
+  color: #4e9aec; 
+}
+
+
+td {
+  position: relative;
+}

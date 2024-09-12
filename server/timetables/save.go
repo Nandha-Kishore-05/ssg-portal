@@ -18,10 +18,10 @@ func SaveTimetable(c *gin.Context) {
 
 	db := config.Database
   
-	// Prepare the SQL statement
+
 	stmt, err := db.Prepare(`
-		INSERT INTO timetable (day_name, start_time, end_time, subject_name, faculty_name, classroom,status,semester_id,department_id)
-		VALUES (?, ?, ?, ?, ?, ?,?,?,?)
+		INSERT INTO timetable (day_name, start_time, end_time, subject_name, faculty_name, classroom,status,semester_id,department_id,academic_year)
+		VALUES (?, ?, ?, ?, ?, ?,?,?,?,?)
 	`)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to prepare statement: " + err.Error()})
@@ -39,7 +39,10 @@ func SaveTimetable(c *gin.Context) {
 			entry.Classroom,
 			entry.Status,
 			entry.SemesterID,
-		entry.DepartmentID)
+			entry.DepartmentID,
+			entry.AcademicYear,
+	
+	)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save timetable entry: " + err.Error()})
 			return

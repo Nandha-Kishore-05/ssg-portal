@@ -5,7 +5,7 @@ import './Fac.css';
 import CustomButton from '../../components/button';
 
 const FacultyTimetable = (props) => {
-
+  console.log(props)
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,7 +13,8 @@ const FacultyTimetable = (props) => {
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/faculty/${props.facultyName}`);
+       
+        const response = await axios.get(`http://localhost:8080/timetable/faculty/${props.facultyName}/${props.academicYearID}`);
         setSchedule(response.data);
       } catch (err) {
         setError(err.message);
@@ -21,12 +22,12 @@ const FacultyTimetable = (props) => {
         setLoading(false);
       }
     };
-
+  
     if (props.facultyName) {
       fetchTimetable();
     }
-  }, [props.facultyName]);
-
+  }, [props.facultyName, props.academicYearID]); // Added props.academicYearID to dependency array
+  
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
 

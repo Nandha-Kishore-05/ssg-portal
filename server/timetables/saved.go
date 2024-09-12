@@ -12,11 +12,12 @@ import (
 func GetTimetable(c *gin.Context) {
 	classroom := c.Param("departmentID")
 	sem := c.Param("semesterId")
+	AcademicYear := c.Param("academicYearID")
 	var name string
 	err := config.Database.QueryRow(`
 		SELECT name
 		FROM classrooms
-		WHERE department_id = ? AND semester_id = ?`, classroom, sem).Scan(&name)
+		WHERE department_id = ? AND semester_id = ? AND  academic_year_id = ?`, classroom, sem,AcademicYear).Scan(&name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch department ID: " + err.Error()})
 		return
@@ -24,7 +25,7 @@ func GetTimetable(c *gin.Context) {
 
 	var entries []models.TimetableEntry
 	rows, err := config.Database.Query(`
-    SELECT id, day_name, start_time, end_time, subject_name, faculty_name, classroom, semester_id,department_id,status
+    SELECT id, day_name, start_time, end_time, subject_name, faculty_name, classroom, semester_id,department_id,status,academic_year
     FROM timetable
     WHERE classroom = ?`, name)
 
@@ -36,7 +37,7 @@ func GetTimetable(c *gin.Context) {
 
 	for rows.Next() {
 		var entry models.TimetableEntry
-		if err := rows.Scan(&entry.ID, &entry.DayName, &entry.StartTime, &entry.EndTime, &entry.SubjectName, &entry.FacultyName, &entry.Classroom, &entry.SemesterID, &entry.DepartmentID, &entry.Status); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.DayName, &entry.StartTime, &entry.EndTime, &entry.SubjectName, &entry.FacultyName, &entry.Classroom, &entry.SemesterID, &entry.DepartmentID, &entry.Status,&entry.AcademicYear); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan timetable entry: " + err.Error()})
 			return
 		}

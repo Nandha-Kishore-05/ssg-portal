@@ -16,7 +16,7 @@ type FacultyBasedTimetable map[string]map[string][]models.TimetableEntry
 func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, error) {
     existingTimetable := make(map[string]map[string][]models.TimetableEntry)
 
-    rows, err := config.Database.Query("SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom,status, semester_id,department_id FROM timetable")
+    rows, err := config.Database.Query("SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom,status, semester_id,department_id ,academic_year FROM timetable")
     if err != nil {
         return nil, err
     }
@@ -27,8 +27,8 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
         var status int
         var semesterID int
         var departmentID int
-
-        if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID, &departmentID); err != nil {
+        var academicYearID int
+        if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID, &departmentID,&academicYearID); err != nil {
             return nil, err
         }
 
@@ -46,6 +46,7 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
             Status:       status,
             SemesterID:   semesterID,
             DepartmentID: departmentID,
+            AcademicYear: academicYearID,
         }
 
         existingTimetable[facultyName][dayName] = append(existingTimetable[facultyName][dayName], entry)
@@ -53,16 +54,16 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 
     return existingTimetable, nil
 }
-func FetchTimetableSkips(departmentID int, semesterID int) (map[string]map[string]models.TimetableEntry, error) {
+func FetchTimetableSkips(departmentID int, semesterID int,academicYearID int) (map[string]map[string]models.TimetableEntry, error) {
     skipEntries := make(map[string]map[string]models.TimetableEntry)
 
    
     query := `
-        SELECT day_name, start_time, end_time, subject_name, faculty_name, semester_id, department_id ,classroom,status
+        SELECT day_name, start_time, end_time, subject_name, faculty_name, semester_id, department_id ,classroom,status,academic_year
         FROM timetable_skips 
-        WHERE department_id = ? AND semester_id = ?`
+        WHERE department_id = ? AND semester_id = ? AND  academic_year = ?`
 
-    rows, err := config.Database.Query(query, departmentID, semesterID)
+    rows, err := config.Database.Query(query, departmentID, semesterID,&academicYearID)
     if err != nil {
         return nil, err
     }
@@ -70,10 +71,10 @@ func FetchTimetableSkips(departmentID int, semesterID int) (map[string]map[strin
 
     for rows.Next() {
         var dayName, startTime, endTime, subjectName, facultyName, Classroom string
-       var status int
+       var status,academicYearID int
 
      
-        if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &semesterID, &departmentID, &Classroom,&status); err != nil {
+        if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &semesterID, &departmentID, &Classroom,&status,&academicYearID); err != nil {
             return nil, err
         }
 
@@ -91,6 +92,7 @@ func FetchTimetableSkips(departmentID int, semesterID int) (map[string]map[strin
             Status:       status,
             SemesterID:   semesterID,
             DepartmentID: departmentID,
+            AcademicYear: academicYearID,
         }
 
         skipEntries[dayName][startTime] = entry
@@ -99,14 +101,14 @@ func FetchTimetableSkips(departmentID int, semesterID int) (map[string]map[strin
     return skipEntries, nil
 }
 
-func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester, departmentID int, semesterID int) map[string]map[string][]models.TimetableEntry {
+func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester,academicYear []models.AcademicYear, departmentID int, semesterID int,academicYearID int) map[string]map[string][]models.TimetableEntry {
 
     existingTimetable, err := FetchExistingTimetable()
     if err != nil {
         fmt.Println("Error fetching existing timetable:", err)
         return nil
     }
-    skipTimetable, err := FetchTimetableSkips(departmentID, semesterID)
+    skipTimetable, err := FetchTimetableSkips(departmentID, semesterID,academicYearID)
     if err != nil {
         fmt.Println("Error fetching timetable skips:", err)
         return nil
@@ -234,6 +236,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
                             Status:       subject.Status,
                             SemesterID:   selectedClassroom.SemesterID,
                             DepartmentID: departmentID,
+                            AcademicYear: academicYearID,
                         }
 
                         if _, ok := timetable[day.DayName]; !ok {
@@ -300,7 +303,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
             fmt.Println("Regenerating timetable due to unassigned periods or conflicts...")
         }
     } else {
-        return generateRandomTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, departmentID, semesterID)
+        return generateRandomTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, departmentID, semesterID,academicYearID)
     }
 }
 
@@ -352,9 +355,10 @@ func generateRandomTimetable(
     semesters []models.Semester,
     departmentID int,
     semesterID int,
+    academicYearID int,
 ) FacultyBasedTimetable {
   
-    skipTimetable, err := FetchTimetableSkips(departmentID, semesterID)
+    skipTimetable, err := FetchTimetableSkips(departmentID, semesterID,academicYearID)
     if err != nil {
         fmt.Println("Error fetching timetable skips:", err)
         return nil
@@ -450,6 +454,7 @@ func generateRandomTimetable(
                                     Status:       subject.Status,
                                     SemesterID:   getSemesterID(classrooms, subject),
                                     DepartmentID: departmentID,
+                                    AcademicYear: academicYearID,
                                 }
 
                                 entry2 := models.TimetableEntry{
@@ -462,6 +467,7 @@ func generateRandomTimetable(
                                     Status:       subject.Status,
                                     SemesterID:   entry1.SemesterID,
                                     DepartmentID: departmentID,
+                                    AcademicYear: academicYearID,
                                 }
 
                                 timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry1)
@@ -485,6 +491,7 @@ func generateRandomTimetable(
                             Status:       subject.Status,
                             SemesterID:   getSemesterID(classrooms, subject),
                             DepartmentID: departmentID,
+                            AcademicYear: academicYearID,
                         }
 
                         timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)

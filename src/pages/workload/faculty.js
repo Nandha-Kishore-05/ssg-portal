@@ -363,6 +363,7 @@ const FacTimetable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedFaculty, setSelectedFaculty] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -389,14 +390,12 @@ const FacTimetable = () => {
     setCurrentPage(1); // Reset to first page when search term changes
   }, [searchTerm, facultyData]);
 
-  const handleActionClick = (faculty) => {
-    // If the same faculty is clicked again, toggle the timetable display
-    if (selectedFaculty && selectedFaculty.value === faculty.value) {
-      setIsOpen(!isOpen);
-    } else {
+  const handleActionClick = (faculty,academicYearID) => {
+    
       setSelectedFaculty(faculty);
+     setSelectedYear(academicYearID);
       setIsOpen(true);
-    }
+    
   };
 
   // Pagination logic
@@ -406,13 +405,13 @@ const FacTimetable = () => {
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-  if (selectedFaculty && isOpen) {
+  if (selectedFaculty && selectedYear && isOpen) {
     return (
       <AppLayout
         rId={4}
         title="Faculty Table"
         body={
-          <FacultyTimetable facultyName={selectedFaculty.value} />
+          <FacultyTimetable facultyName={selectedFaculty.value}  academicYearID = {selectedYear.value} />
         }
       />
     );
@@ -439,6 +438,7 @@ const FacTimetable = () => {
                 <td>S.No</td>
                 <td>Faculty Name</td>
                 <td>Faculty ID</td>
+                <td>academic-Year</td>
                 <td>Action</td>
               </tr>
             </thead>
@@ -449,10 +449,11 @@ const FacTimetable = () => {
                     <td className="faculty-timetable-cell">{indexOfFirstRow + index + 1}</td>
                     <td className="faculty-timetable-cell">{item.label}</td>
                     <td className="faculty-timetable-cell">{item.id}</td>
+                    <td className="faculty-timetable-cell">{item.academic_year}</td>
                     <td className="faculty-timetable-cell">
                       <VisibilityRounded
                         className="dashboard-view-icon"
-                        onClick={() => handleActionClick(item)}
+                        onClick={() => handleActionClick(item.value,item.academic_id)}
                       />
                     </td>
                   </tr>

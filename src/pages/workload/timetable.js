@@ -36,7 +36,7 @@ const SavedTimetable = (props) => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/saved/${props.departmentID}/${props.semesterID}`);
+        const response = await axios.get(`http://localhost:8080/timetable/saved/${props.departmentID}/${props.semesterID}/${props.academicYearID }`);
         const data = response.data;
 
         const allDays = new Set();

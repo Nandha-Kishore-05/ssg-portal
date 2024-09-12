@@ -18,6 +18,9 @@ const GenerateTimetable = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [viewedDepartment, setViewedDepartment] = useState(null);
   const [viewedSemester, setViewedSemester] = useState(null);
+  const [viewedAcademic, setViewedAcademic] = useState(null);
+  const [academicYear, setAcademicYear] = useState(null);
+  const [academicsOptions, setAcademicsOptions] = useState([]);
 
   useEffect(() => {
     axios.get('http://localhost:8080/timetable/options')
@@ -39,10 +42,21 @@ const GenerateTimetable = () => {
       });
   }, []);
 
+  useEffect(() => {
+    axios.get('http://localhost:8080/acdemicYearOptions')
+      .then(response => {
+        setAcademicsOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching semester options:', error);
+      });
+  }, []);
+
   const handleViewTimetable = () => {
     if (department && semester) {
       setViewedDepartment(department.value);
       setViewedSemester(semester.value);
+      setViewedAcademic(academicYear.value);
       setIsOpen(true);
     } else {
       console.error('Please select both department and semester');
@@ -68,6 +82,13 @@ const GenerateTimetable = () => {
               onChange={setSemester}
               options={semOptions}
             />
+             <CustomSelect
+              placeholder="ACADEMIC YEAR"
+              value={academicYear}
+              onChange={setAcademicYear}
+              options={academicsOptions}
+            />
+          
             <CustomButton
               width="150"
               label="Generate Timetable"
@@ -76,8 +97,8 @@ const GenerateTimetable = () => {
             />
           </div>
 
-          {(viewedDepartment && viewedSemester && isOpen) && 
-            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} />
+          {(viewedDepartment && viewedSemester && viewedAcademic && isOpen) && 
+            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} academicYearID = {viewedAcademic} />
           }
         </div>
       }

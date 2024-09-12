@@ -32,6 +32,7 @@ type Classroom struct {
 	ClassroomName string `json:"name"`
 	DepartmentID  int    `json:"department_id"`
 	SemesterID    int    `json:"semester_id"`
+	 AcademicYear    int    `json:"academic_year_id"`
 }
 
 type FacultySubject struct {
@@ -53,7 +54,8 @@ type TimetableEntry struct {
 	DepartmentID    int    `json:"department_id"`
 	SubjectID       int    `json:"subject_id"`
 	FacultyID       int    `json:"faculty_id"`
-	TimetableStatus int    `json:timetable_status`
+	TimetableStatus int    `json:"timetable_status"`
+    AcademicYear    int    `json:"academic_year_id"`
 }
 type Class struct {
 	Day          string `json:"day_name"`
@@ -158,4 +160,8 @@ type UpdateRequest struct {
 	FacultyName    string `json:"faculty_name"`
 	OldFacultyName  string `json:"old_faculty_name"`
 	 FacultyID      *int   `json:"faculty_id"`
+}
+type AcademicYear struct{
+	 AcademicYear    int    `json:"academic_year_id"`
+	 AcademicYearName string    `json:"academic_year"`
 }
