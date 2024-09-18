@@ -48,6 +48,6 @@ func main() {
     r.GET("/getResource",role.GetResources)
 	r.POST("/send-otp",otp.SendOTPHandler)
 	r.POST("/verify-otp",otp.VerifyOTPHandler)
-	r.GET("/downloadTimetable", excel.DownloadTimetable)
+	r.GET("/downloadTimetable/:semesterId", excel.DownloadTimetable)
 	r.Run(":8080")
 }

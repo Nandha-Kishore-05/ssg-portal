@@ -1,6 +1,5 @@
 
 
-
 // import React, { useEffect, useState } from 'react';
 // import AppLayout from '../../layout/layout';
 // import axios from 'axios';
@@ -8,188 +7,11 @@
 // import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded';
 // import ArrowForwardIosRounded from '@mui/icons-material/ArrowForwardIosRounded';
 // import VisibilityRounded from '@mui/icons-material/VisibilityRounded';
+// import FilterListRounded from '@mui/icons-material/FilterListRounded';
 // import SavedTimetable from '../workload/timetable';
 // import CustomButton from '../../components/button';
 // import { useNavigate } from 'react-router-dom';
-
-// function SaveTimetable() {
-//   const [data, setData] = useState([]);
-//   const [filteredData, setFilteredData] = useState([]);
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [rowsPerPage, setRowsPerPage] = useState(10);
-//   const [selectedDepartment, setSelectedDepartment] = useState(null);
-//   const [selectedSemester, setSelectedSemester] = useState(null);
-//   const [isOpen, setIsOpen] = useState(false);
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     axios.get('http://localhost:8080/saved/deptoptions')
-//       .then((response) => {
-//         setData(response.data || []);  
-//         setFilteredData(response.data || []); 
-//       })
-//       .catch((error) => {
-//         console.error('Error fetching data:', error);
-//       });
-//   }, []);
-
-//   useEffect(() => {
-//     const results = data.filter((item) =>
-//       item.department_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       item.semester_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       item.classroom.toLowerCase().includes(searchTerm.toLowerCase())
-//     );
-//     setFilteredData(results);
-//     setCurrentPage(1);
-//   }, [searchTerm, data]);
-
-//   const indexOfLastRow = currentPage * rowsPerPage;
-//   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-//   const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
-//   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-
-//   const handleViewClick = (departmentId, semesterId) => {
-//     console.log('View clicked', departmentId, semesterId);
-//     setSelectedDepartment(departmentId);
-//     setSelectedSemester(semesterId);
-//     setIsOpen(true);
-//   };
-
-//   if (selectedDepartment && selectedSemester && isOpen) {
-//     return (
-//       <AppLayout
-//         rId={3}
-//         title="Saved Timetable"
-//         body={
-//           <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} />
-//         }
-//       />
-//     );
-//   }
-
-//   return (
-//     <AppLayout
-//       rId={3}
-//       title="Time Table"
-//       body={
-//         <>
-//           <div className='dashboard-container'>
-//             <div className="dashboard-header">
-//               <input
-//                 type="text"
-//                 placeholder="Search..."
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//                 className="dashboard-search-input"
-//               />
-//                      <div className="buttons">
-//                  <CustomButton
-//                 width="150"
-//                 label="Download Timetable"
-              
-//               />
-//               <CustomButton
-//                 width="150"
-//                 label="Generate Timetable"
-//                 onClick={() => navigate('/timetable')}
-//               />
-//               </div>
-//             </div>
-//             <table className="dashboard-table">
-//               <thead className="dashboard-table-head">
-//                 <tr>
-//                   <td>S.No</td>
-//                   <td>Department</td>
-//                   <td>Semester</td>
-//                   <td>Classroom</td>
-                
-//                   <td>Action</td>
-//                 </tr>
-//               </thead>
-//               <tbody className="dashboard-table-body">
-//                 {currentRows.length > 0 ? (
-//                   currentRows.map((row, index) => (
-//                     <tr key={index} className="dashboard-table-row">
-//                       <td className="dashboard-table-cell">{indexOfFirstRow + index + 1}</td>
-//                       <td className="dashboard-table-cell">{row.department_name}</td>
-//                       <td className="dashboard-table-cell">{row.semester_name}</td>
-//                       <td className="dashboard-table-cell">{row.classroom}</td>
-//                       <td className="dashboard-table-cell">
-//                         <VisibilityRounded
-//                           className="dashboard-view-icon"
-//                           onClick={() => handleViewClick(row.department_id, row.semester_id)}
-//                         />
-//                       </td>
-//                     </tr>
-//                   ))
-//                 ) : (
-//                   <tr>
-//                     <td colSpan="5" className="dashboard-table-no-data">
-//                       No data available
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//             <div className="dashboard-pagination">
-//               <h4 className="dashboard-pagination-text">
-//                 Page {currentPage} of {totalPages}
-//               </h4>
-//               <div className="dashboard-pagination-right">
-//                 <h4 className="dashboard-pagination-text">
-//                   Rows per page:
-//                 </h4>
-//                 <div className="dashboard-pagination-dropdown">
-//                   <select
-//                     value={rowsPerPage}
-//                     onChange={(e) => {
-//                       setRowsPerPage(parseInt(e.target.value, 10));
-//                       setCurrentPage(1);
-//                     }}
-//                   >
-//                     <option value={10}>10</option>
-//                     <option value={20}>20</option>
-//                     <option value={50}>50</option>
-//                     <option value={100}>100</option>
-//                   </select>
-//                 </div>
-//                 <button
-//                   onClick={() => setCurrentPage(currentPage - 1)}
-//                   disabled={currentPage === 1}
-//                   className="dashboard-pagination-button"
-//                 >
-//                   <ArrowBackIosRounded fontSize="small" />
-//                 </button>
-//                 <button
-//                   onClick={() => setCurrentPage(currentPage + 1)}
-//                   disabled={indexOfLastRow >= filteredData.length}
-//                   className="dashboard-pagination-button"
-//                 >
-//                   <ArrowForwardIosRounded fontSize="small" />
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         </>
-//       }
-//     />
-//   );
-// }
-
-// export default SaveTimetable;
-
-// import React, { useEffect, useState } from 'react';
-// import AppLayout from '../../layout/layout';
-// import axios from 'axios';
-// import './save.css';
-// import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded';
-// import ArrowForwardIosRounded from '@mui/icons-material/ArrowForwardIosRounded';
-// import VisibilityRounded from '@mui/icons-material/VisibilityRounded';
-// import FilterListRounded from '@mui/icons-material/FilterListRounded';  // Filter icon
-// import SavedTimetable from '../workload/timetable';
-// import CustomButton from '../../components/button';
-// import { useNavigate } from 'react-router-dom';
+// import fileDownload from 'js-file-download';
 
 // function SaveTimetable() {
 //   const [data, setData] = useState([]);
@@ -199,27 +21,28 @@
 //   const [rowsPerPage, setRowsPerPage] = useState(10);
 //   const [selectedDepartment, setSelectedDepartment] = useState('');
 //   const [selectedSemester, setSelectedSemester] = useState('');
-//   const [departments, setDepartments] = useState([]); // List of departments
-//   const [semesters, setSemesters] = useState([]); // List of semesters
+//   const [selectedAcademicyear, setSelectedAcademicyear] = useState('');
+//   const [departments, setDepartments] = useState([]);
+//   const [semesters, setSemesters] = useState([]);
 //   const [isDropdownOpen, setIsDropdownOpen] = useState({ department: false, semester: false });
 //   const [isOpen, setIsOpen] = useState(false);
 //   const navigate = useNavigate();
 
 //   useEffect(() => {
-//     // Fetch data and department/semester options
+
 //     axios.get('http://localhost:8080/saved/deptoptions')
 //       .then((response) => {
 //         setData(response.data || []);  
 //         setFilteredData(response.data || []); 
-//         setDepartments([...new Set(response.data.map(item => item.department_name))]); // Unique departments
-//         setSemesters([...new Set(response.data.map(item => item.semester_name))]); // Unique semesters
+//         setDepartments([...new Set(response.data.map(item => item.department_name))]); 
+//         setSemesters([...new Set(response.data.map(item => item.semester_name))]); 
 //       })
 //       .catch((error) => {
 //         console.error('Error fetching data:', error);
 //       });
 //   }, []);
 
-//   // Filter data based on search term, department, and semester
+ 
 //   useEffect(() => {
 //     const results = data.filter((item) =>
 //       (selectedDepartment ? item.department_name === selectedDepartment : true) &&
@@ -237,9 +60,10 @@
 //   const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
 //   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-//   const handleViewClick = (departmentId, semesterId) => {
+//   const handleViewClick = (departmentId, semesterId,academicYearID) => {
 //     setSelectedDepartment(departmentId);
 //     setSelectedSemester(semesterId);
+//     setSelectedAcademicyear(academicYearID)
 //     setIsOpen(true);
 //   };
 
@@ -257,13 +81,26 @@
 //     setIsDropdownOpen({ department: false, semester: false });
 //   };
 
-//   if (selectedDepartment && selectedSemester && isOpen) {
+
+
+//   const downloadTimetable = () => {
+//     axios.get('http://localhost:8080/downloadTimetable/:semesterId', { responseType: 'blob' })
+//       .then((response) => {
+//         fileDownload(response.data); 
+//       })
+//       .catch((error) => {
+//         console.error('Error downloading the file:', error);
+//       });
+//   };
+
+
+//   if (selectedDepartment && selectedSemester && selectedAcademicyear && isOpen) {
 //     return (
 //       <AppLayout
 //         rId={3}
 //         title="Saved Timetable"
 //         body={
-//           <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} />
+//           <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} academicYearID = {selectedAcademicyear} />
 //         }
 //       />
 //     );
@@ -285,7 +122,7 @@
 //                 className="dashboard-search-input"
 //               />
 //               <div className="buttons">
-//                 <CustomButton width="150" label="Download Timetable" />
+//                 <CustomButton width="150" label="Download Timetable" onClick={downloadTimetable} />
 //                 <CustomButton width="150" label="Generate Timetable" onClick={() => navigate('/timetable')} />
 //               </div>
 //             </div>
@@ -294,33 +131,33 @@
 //                 <tr>
 //                   <td>S.No</td>
 //                   <td>
-//                  Department
-//   <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('department')} />
-//   {isDropdownOpen.department && (
-//     <div className="filter-dropdown department-filter-dropdown">  
-//       {departments.map((dept, index) => (
-//         <div key={index} onClick={() => handleDepartmentSelect(dept)}>
-//           {dept}
-//         </div>
-//       ))}
-//     </div>
-//   )}
-// </td>
-// <td>
-//   Semester
-//   <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('semester')} />
-//   {isDropdownOpen.semester && (
-//     <div className="filter-dropdown semester-filter-dropdown">  
-//       {semesters.map((sem, index) => (
-//         <div key={index} onClick={() => handleSemesterSelect(sem)}>
-//           {sem}
-//         </div>
-//       ))}
-//     </div>
-//   )}
-// </td>
-
+//                     Department
+//                     <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('department')} />
+//                     {isDropdownOpen.department && (
+//                       <div className="filter-dropdown department-filter-dropdown">
+//                         {departments.map((dept, index) => (
+//                           <div key={index} onClick={() => handleDepartmentSelect(dept)}>
+//                             {dept}
+//                           </div>
+//                         ))}
+//                       </div>
+//                     )}
+//                   </td>
+//                   <td>
+//                     Semester
+//                     <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('semester')} />
+//                     {isDropdownOpen.semester && (
+//                       <div className="filter-dropdown semester-filter-dropdown">
+//                         {semesters.map((sem, index) => (
+//                           <div key={index} onClick={() => handleSemesterSelect(sem)}>
+//                             {sem}
+//                           </div>
+//                         ))}
+//                       </div>
+//                     )}
+//                   </td>
 //                   <td>Classroom</td>
+//                   <td>Academic-Year</td>
 //                   <td>Action</td>
 //                 </tr>
 //               </thead>
@@ -332,10 +169,11 @@
 //                       <td className="dashboard-table-cell">{row.department_name}</td>
 //                       <td className="dashboard-table-cell">{row.semester_name}</td>
 //                       <td className="dashboard-table-cell">{row.classroom}</td>
+//                       <td className="dashboard-table-cell">{row.academic_year_name}</td>
 //                       <td className="dashboard-table-cell">
 //                         <VisibilityRounded
 //                           className="dashboard-view-icon"
-//                           onClick={() => handleViewClick(row.department_id, row.semester_id)}
+//                           onClick={() => handleViewClick(row.department_id, row.semester_id,row.academic_year_id)}
 //                         />
 //                       </td>
 //                     </tr>
@@ -394,6 +232,7 @@
 
 // export default SaveTimetable;
 
+
 import React, { useEffect, useState } from 'react';
 import AppLayout from '../../layout/layout';
 import axios from 'axios';
@@ -405,17 +244,17 @@ import FilterListRounded from '@mui/icons-material/FilterListRounded';
 import SavedTimetable from '../workload/timetable';
 import CustomButton from '../../components/button';
 import { useNavigate } from 'react-router-dom';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
+import fileDownload from 'js-file-download';
 
 function SaveTimetable() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [DownloadSemId,setDownloadSemId]=useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [selectedSemester, setSelectedSemester] = useState('');
+  const [selectedSemester, setSelectedSemester] = useState(''); 
   const [selectedAcademicyear, setSelectedAcademicyear] = useState('');
   const [departments, setDepartments] = useState([]);
   const [semesters, setSemesters] = useState([]);
@@ -423,19 +262,23 @@ function SaveTimetable() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
 
+  useEffect(() => {
     axios.get('http://localhost:8080/saved/deptoptions')
       .then((response) => {
-        setData(response.data || []);  
-        setFilteredData(response.data || []); 
-        setDepartments([...new Set(response.data.map(item => item.department_name))]); 
-        setSemesters([...new Set(response.data.map(item => item.semester_name))]); 
+        setData(response.data || []);
+        setFilteredData(response.data || []);
+  
+   
+        setSemesters([...new Set(response.data.map(item => ({ id: item.semester_id, name: item.semester_name })))]);
+  
+        setDepartments([...new Set(response.data.map(item => item.department_name))]);
       })
       .catch((error) => {
         console.error('Error fetching data:', error);
       });
   }, []);
+  
 
  
   useEffect(() => {
@@ -450,71 +293,58 @@ function SaveTimetable() {
     setCurrentPage(1);
   }, [searchTerm, selectedDepartment, selectedSemester, data]);
 
+  // Pagination logic
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-  const handleViewClick = (departmentId, semesterId,academicYearID) => {
+  // Handle view click for timetable details
+  const handleViewClick = (departmentId, semesterId, academicYearID) => {
     setSelectedDepartment(departmentId);
     setSelectedSemester(semesterId);
-    setSelectedAcademicyear(academicYearID)
+    setSelectedAcademicyear(academicYearID);
     setIsOpen(true);
   };
 
+  // Dropdown toggle logic
   const toggleDropdown = (type) => {
     setIsDropdownOpen((prevState) => ({ ...prevState, [type]: !prevState[type] }));
   };
 
+  // Select department
   const handleDepartmentSelect = (department) => {
     setSelectedDepartment(department);
     setIsDropdownOpen({ department: false, semester: false });
   };
 
-  const handleSemesterSelect = (semester) => {
-    setSelectedSemester(semester);
+  // Select semester
+  const handleSemesterSelect = (sem) => {
+    console.log('Selected Semester ID:', sem.id);
+    console.log('Selected Semester Name:', sem.name);
+    
+    setDownloadSemId(sem.id)
+    setSelectedSemester(sem.name); 
     setIsDropdownOpen({ department: false, semester: false });
   };
+  
 
-  const downloadTimetable = async () => {
-    try {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Timetable');
-  
-      worksheet.columns = [
-        { header: 'Department', key: 'department_name', width: 20 },
-        { header: 'Semester', key: 'semester_name', width: 20 },
-        { header: 'Classroom', key: 'classroom', width: 20 },
-        // Add other columns as needed
-      ];
-  
-      filteredData.forEach((row) => {
-        worksheet.addRow(row);
-      });
-  
-      worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) {
-          row.font = { bold: true };
-          row.alignment = { horizontal: 'center' };
-        }
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
-          cell.alignment = { horizontal: 'center' };
-        });
-      });
-  
-      const buffer = await workbook.xlsx.writeBuffer();
-      saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Timetable.xlsx');
-    } catch (error) {
-      console.error('Error exporting to Excel:', error);
+
+  const downloadTimetable = () => {
+    if (!selectedSemester) {
+      alert('Please select a semester to download the timetable.');
+      return;
     }
+
+
+    axios.get(`http://localhost:8080/downloadTimetable/${DownloadSemId}`, { responseType: 'blob' })
+      .then((response) => {
+        fileDownload(response.data, `timetable_${selectedSemester}.xlsx`);
+      })
+      .catch((error) => {
+        console.error('Error downloading the file:', error);
+      });
   };
-  
 
   if (selectedDepartment && selectedSemester && selectedAcademicyear && isOpen) {
     return (
@@ -522,7 +352,7 @@ function SaveTimetable() {
         rId={3}
         title="Saved Timetable"
         body={
-          <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} academicYearID = {selectedAcademicyear} />
+          <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} academicYearID={selectedAcademicyear} />
         }
       />
     );
@@ -554,7 +384,7 @@ function SaveTimetable() {
                   <td>S.No</td>
                   <td>
                     Department
-                    <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('department')} />
+                    {/* <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('department')} />
                     {isDropdownOpen.department && (
                       <div className="filter-dropdown department-filter-dropdown">
                         {departments.map((dept, index) => (
@@ -563,21 +393,22 @@ function SaveTimetable() {
                           </div>
                         ))}
                       </div>
-                    )}
+                    )} */}
                   </td>
                   <td>
-                    Semester
-                    <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('semester')} />
-                    {isDropdownOpen.semester && (
-                      <div className="filter-dropdown semester-filter-dropdown">
-                        {semesters.map((sem, index) => (
-                          <div key={index} onClick={() => handleSemesterSelect(sem)}>
-                            {sem}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </td>
+  Semester
+  <FilterListRounded className="filter-icon" onClick={() => toggleDropdown('semester')} />
+  {isDropdownOpen.semester && (
+    <div className="filter-dropdown semester-filter-dropdown">
+      {semesters.map((sem, index) => (
+        <div key={index} onClick={() => handleSemesterSelect(sem)}>
+          {sem.name} 
+        </div>
+      ))}
+    </div>
+  )}
+</td>
+
                   <td>Classroom</td>
                   <td>Academic-Year</td>
                   <td>Action</td>
@@ -595,7 +426,7 @@ function SaveTimetable() {
                       <td className="dashboard-table-cell">
                         <VisibilityRounded
                           className="dashboard-view-icon"
-                          onClick={() => handleViewClick(row.department_id, row.semester_id,row.academic_year_id)}
+                          onClick={() => handleViewClick(row.department_id, row.semester_id, row.academic_year_id)}
                         />
                       </td>
                     </tr>

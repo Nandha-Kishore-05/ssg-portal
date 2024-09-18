@@ -390,9 +390,9 @@ const FacTimetable = () => {
     setCurrentPage(1); // Reset to first page when search term changes
   }, [searchTerm, facultyData]);
 
-  const handleActionClick = (faculty,academicYearID) => {
+  const handleActionClick = (facultyName,academicYearID) => {
     
-      setSelectedFaculty(faculty);
+      setSelectedFaculty(facultyName);
      setSelectedYear(academicYearID);
       setIsOpen(true);
     
@@ -411,7 +411,7 @@ const FacTimetable = () => {
         rId={4}
         title="Faculty Table"
         body={
-          <FacultyTimetable facultyName={selectedFaculty.value}  academicYearID = {selectedYear.value} />
+          <FacultyTimetable facultyName={selectedFaculty}  academicYearID = {selectedYear} />
         }
       />
     );

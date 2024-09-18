@@ -1,89 +1,24 @@
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
 
-// import AppLayout from '../../layout/layout';
-// import './workload.css';
-// import CustomSelect from '../../components/select';
-// import CustomButton from '../../components/button';
-// import LabTimetable from './labtable';
-
-// const Lab = () => {
-
-
-//   const [labOptions, setLabOptions] = useState([]);
-//   const [selectedLab, setSelectedLab] = useState("");
-//   const [isOpen,setIsOpen] = useState(false)
-//   useEffect(() => {
-//     axios.get('http://localhost:8080/timetable/labOptions')
-//       .then(response => {
-//         setLabOptions(response.data);
-//       })
-//       .catch(error => {
-//         console.error('Error fetching lab subject names:', error);
-//       });
-//   }, []);
-
-//   const handleViewTimetable = () => {
-//     if (selectedLab) {
-//       setIsOpen(true);
-//     } else {
-//       console.error('Please select a lab options');
-//     }
-//   };
-//     return (
-//         <AppLayout
-//           rId={5}
-//           title="Lab Table"
-//           body={
-//             <div style={{backgroundColor:"white",padding: 17,marginTop: 20,borderRadius:"10" }}>
-//                              <div style={{display:'flex',flexDirection:'row',columnGap:10,alignItems:"center"}}>
-//             <CustomSelect
-//             placeholder="Lab Name"
-//             value={selectedLab}
-//             onChange={setSelectedLab}
-//             options={labOptions}
-//           />
-        
-          
-//             <CustomButton
-//               width="150"
-//               label="View Timetable"
-//               onClick={handleViewTimetable}
-//             />
-        
-//           </div>
-//           { (selectedLab && isOpen) && 
-//           <LabTimetable subjectName ={selectedLab.value} />
-             
-//           }
-//                 </div>
-//           }
-//           />
-//         );
-// };
-
-// export default Lab;
 
 
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './lab.css'; // Make sure this CSS file is properly linked
+import './lab.css'; 
 import AppLayout from '../../layout/layout';
 import { ArrowBackIosRounded, ArrowForwardIosRounded, VisibilityRounded } from '@mui/icons-material';
 import LabTimetable from './labtable';
 
 const Lab = () => {
   const [labData, setLabData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]); // Initialized as an empty array
+  const [filteredData, setFilteredData] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedLab, setSelectedLab] = useState(null); // State to track selected lab
-  const [isOpen, setIsOpen] = useState(false); // State to track if timetable is open
-
+  const [selectedLab, setSelectedLab] = useState(null); 
+  const [isOpen, setIsOpen] = useState(false); 
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -105,11 +40,11 @@ const Lab = () => {
       item.label && item.label.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredData(results);
-    setCurrentPage(1); // Reset to the first page when search term changes
+    setCurrentPage(1); 
   }, [searchTerm, labData]);
 
   const handleActionClick = (lab) => {
-    // If the same lab is clicked again, toggle the timetable display
+   
     if (selectedLab && selectedLab.value === lab.value) {
       setIsOpen(!isOpen);
     } else {
@@ -118,7 +53,7 @@ const Lab = () => {
     }
   };
 
-  // Pagination logic
+ 
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = Array.isArray(filteredData) ? filteredData.slice(indexOfFirstRow, indexOfLastRow) : [];
@@ -154,6 +89,7 @@ const Lab = () => {
               <tr>
                 <td>S.No</td>
                 <td>Lab Name</td>
+                <td>Academic Year</td>
                 <td>Action</td>
               </tr>
             </thead>
@@ -163,6 +99,7 @@ const Lab = () => {
                   <tr key={`${item.value}-${index}`} className="lab-timetable-row">
                     <td className="lab-timetable-cell">{indexOfFirstRow + index + 1}</td>
                     <td className="lab-timetable-cell">{item.label}</td>
+                    <td className="lab-timetable-cell">{item.academic_year}</td>
                     <td className="lab-timetable-cell">
                       <VisibilityRounded
                         className="dashboard-view-icon"
