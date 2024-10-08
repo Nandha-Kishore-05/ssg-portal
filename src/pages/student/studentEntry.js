@@ -1,20 +1,54 @@
-
-
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { Modal, Fade, Button } from "@mui/material";
 import { ArrowBackIosRounded, ArrowForwardIosRounded } from '@mui/icons-material';
 import AppLayout from "../../layout/layout";
-import "./period.css";
+import CustomSelect from "../../components/select";
+import './studentEntry.css'
 
-const SubjectEntry = () => {
+const StudentEntry = () => {
   const [excelData, setExcelData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10); // Default rows per page
+  const [rowsPerPage, setRowsPerPage] = useState(10); 
   const [openModal, setOpenModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [department, setDepartment] = useState(null);
+  const [deptOptions, setDeptOptions] = useState([]);
+  const [semester, setSemester] = useState(null);
+  const [semOptions, setSemOptions] = useState([]);
+  const [academicYear, setAcademicYear] = useState(null);
+  const [academicsOptions, setAcademicsOptions] = useState([]);
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/timetable/options')
+      .then(response => {
+        setDeptOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching department options:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/timetable/semoptions')
+      .then(response => {
+        setSemOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching semester options:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/acdemicYearOptions')
+      .then(response => {
+        setAcademicsOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching academic year options:', error);
+      });
+  }, []);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -47,8 +81,17 @@ const SubjectEntry = () => {
   const sendDataToBackend = () => {
     const jsonData = parseExcelToJson();
     console.log("Parsed Excel Data:", jsonData);
-  
-    axios.post('http://localhost:8080/upload', jsonData)
+
+    // Add selected department, semester, and academic year to the request
+    const requestData = {
+      department: department ? department.value : null,
+      semester: semester ? semester.value : null,
+      academicYear: academicYear ? academicYear.value : null,
+      students: jsonData
+    };
+    console.log(requestData)
+
+    axios.post('http://localhost:8080/studententry/upload', requestData)
       .then(response => {
         console.log("Server response:", response);
         setSuccessMessage("Data uploaded successfully!");
@@ -67,14 +110,14 @@ const SubjectEntry = () => {
 
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = excelData.slice(indexOfFirstRow + 1, indexOfLastRow + 1); // Adjusting for headers
+  const currentRows = excelData.slice(indexOfFirstRow + 1, indexOfLastRow + 1);
 
-  const totalPages = Math.ceil((excelData.length - 1) / rowsPerPage); // Adjusting for headers
+  const totalPages = Math.ceil((excelData.length - 1) / rowsPerPage);
 
   return (
     <AppLayout
-      rId={6}
-      title="Subject Entry"
+      rId={13}
+      title="Student Allocation"
       body={
         <div>
           <input
@@ -83,17 +126,36 @@ const SubjectEntry = () => {
             type="file"
             onChange={handleFileUpload}
           />
-          <div className="upload-section">
-            <center><br />
-              <h2>Here you can upload the Subject Entry list</h2>
+
+          <div style={{ backgroundColor: "white", padding: 17, marginTop: 20, borderRadius: "10px" }}>
+            <div style={{ display: 'flex', flexDirection: 'row', columnGap: 10, alignItems: "center", justifyContent: "space-between" }}>
+              <CustomSelect
+                placeholder="DEPARTMENT"
+                value={department}
+                onChange={setDepartment}
+                options={deptOptions}
+              />
+              <CustomSelect
+                placeholder="SEMESTER"
+                value={semester}
+                onChange={setSemester}
+                options={semOptions}
+              />
+              <CustomSelect
+                placeholder="ACADEMIC YEAR"
+                value={academicYear}
+                onChange={setAcademicYear}
+                options={academicsOptions}
+              />
               <button
-                className="upload-button"
+                className="student-upload-button"
                 onClick={() => document.querySelector('.file-upload-input').click()}
               >
                 Upload Excel
               </button>
-            </center>
+            </div>
           </div>
+
           {excelData.length > 0 && (
             <div className="table-section">
               <div className="scrollable-table">
@@ -148,7 +210,7 @@ const SubjectEntry = () => {
                   </button>
                   <button
                     onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={indexOfLastRow >= excelData.length - 1} // Adjusting for headers
+                    disabled={indexOfLastRow >= excelData.length - 1}
                     className="dashboard-pagination-button"
                     aria-label="Next Page"
                   >
@@ -189,4 +251,4 @@ const SubjectEntry = () => {
   );
 };
 
-export default SubjectEntry;
+export default StudentEntry;

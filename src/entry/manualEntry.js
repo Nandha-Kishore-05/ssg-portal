@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './entry.css';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+
 import axios from 'axios';
 import CustomButton from '../components/button';
 import InputBox from '../components/input';
@@ -20,12 +20,15 @@ function ManualEntry() {
     const [endTime, setEndTime] = useState(null);
     const [endTimeOptions, setEndTimeOptions] = useState([]);
     const [subject, setSubject] = useState('');
+    const [courseCode, setCourseCode] = useState('');
     const [faculty, setFaculty] = useState(null);
     const [facultyOptions, setFacultyOptions] = useState([]);
-    const [lab, setLab] = useState(null);
-
+    const [academicYear, setAcademicYear] = useState(null);
+    const [academicsOptions, setAcademicsOptions] = useState(null);
+    const [venue, setVenue] = useState(null);
+    const [venueOptions, setVenueOptions] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
-    const navigate = useNavigate(); // Initialize useNavigate
+    
 
     useEffect(() => {
         axios.get('http://localhost:8080/manual/options')
@@ -60,6 +63,26 @@ function ManualEntry() {
           });
     }, []);
 
+    useEffect(() => {
+        axios.get('http://localhost:8080/acdemicYearOptions')
+          .then(response => {
+            setAcademicsOptions(response.data);
+          })
+          .catch(error => {
+            console.error('Error fetching semester options:', error);
+          });
+      }, []);
+
+      useEffect(() => {
+        axios.get('http://localhost:8080/classroomOptions')
+          .then(response => {
+            setVenueOptions(response.data);
+          })
+          .catch(error => {
+            console.error('Error fetching semester options:', error);
+          });
+      }, []);
+
     const handleSubmit = () => {
         if (semester.length === 0) {
             console.error("No semesters selected");
@@ -79,6 +102,9 @@ function ManualEntry() {
                     start_time: startTime ? startTime.value : null,
                     end_time: endTime ? endTime.value : null,
                     faculty_name: faculty ? faculty.value : null,
+                    classroom : venue ? venue.value : null,
+                    academic_year: academicYear? academicYear.value : null,
+                    course_code : courseCode,
                 };
 
                 console.log('Data to be sent for department:', dept.value, 'and semester:', sem.value, data);
@@ -131,6 +157,14 @@ function ManualEntry() {
                                 />
                             </div>
                             <div className="form-group">
+                                <InputBox
+                                    label="COURSE CODE"
+                                    placeholder="COURSE CODE"
+                                    value={courseCode}
+                                    onChange={setCourseCode}
+                                />
+                            </div>
+                            <div className="form-group">
                                 <CustomSelect
                                     label="DEPARTMENT"
                                     placeholder="DEPARTMENT"
@@ -150,6 +184,15 @@ function ManualEntry() {
                                     isMulti={true} 
                                 />
                             </div>
+                        </div>
+                        <div className="form-group">
+                            <CustomSelect
+                                label="CLASSROOM"
+                                placeholder="CLASSROOM"
+                                value={venue}
+                                onChange={setVenue}
+                                options={venueOptions}
+                            />
                         </div>
                         <div className="form-group">
                             <CustomSelect
@@ -184,6 +227,15 @@ function ManualEntry() {
                                 value={day}
                                 onChange={setDay}
                                 options={dayOptions}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <CustomSelect
+                                label="ACADEMIC YEAR"
+                                placeholder="ACADEMIC YEAR"
+                                value={academicYear}
+                                onChange={setAcademicYear}
+                                options={academicsOptions}
                             />
                         </div>
                        

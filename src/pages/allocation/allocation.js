@@ -230,6 +230,7 @@ function SubjectAllocation() {
                   <td>Faculty</td>
                   <td>Periods</td>
                   <td>Lab Type</td>
+                
                   <td>Action</td>
                 </tr>
               </thead>

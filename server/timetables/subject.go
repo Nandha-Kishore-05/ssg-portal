@@ -7,17 +7,14 @@ import (
 	"ssg-portal/models"
 )
 
-
 func GetSubjects(departmentID, semesterID int) ([]models.Subject, error) {
 	var subjects []models.Subject
 
-	
 	query := `
-		SELECT id, name, status, periods
+		SELECT id, name, status, periods,course_code
 		FROM subjects
 		WHERE department_id = ? AND semester_id = ?
 	`
-
 
 	rows, err := config.Database.Query(query, departmentID, semesterID)
 	if err != nil {
@@ -25,16 +22,14 @@ func GetSubjects(departmentID, semesterID int) ([]models.Subject, error) {
 	}
 	defer rows.Close()
 
-
 	for rows.Next() {
 		var subject models.Subject
-		if err := rows.Scan(&subject.ID, &subject.Name, &subject.Status, &subject.Period); err != nil {
+		if err := rows.Scan(&subject.ID, &subject.Name, &subject.Status, &subject.Period, &subject.CourseCode); err != nil {
 			return nil, fmt.Errorf("error scanning subject: %v", err)
 		}
 		subjects = append(subjects, subject)
 	}
 
-	
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating rows: %v", err)
 	}

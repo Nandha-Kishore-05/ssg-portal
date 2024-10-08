@@ -415,7 +415,8 @@ const Timetable = (props) => {
             status: entry.status,
             semester_id: entry.semester_id,
             department_id: entry.department_id,
-            academic_year_id : entry.academic_year_id
+            academic_year_id : entry.academic_year_id,
+            course_code: entry.course_code
           };
           timetableData.push(data);
         });
@@ -535,6 +536,7 @@ const Timetable = (props) => {
                         <div key={idx} className="subject">
                           <div>{item.subject_name}</div>
                           <div>{item.faculty_name}</div>
+                      
                         </div>
                       ))}
                     </td>
@@ -543,7 +545,7 @@ const Timetable = (props) => {
               ))}
             </tbody>
           </table>
-
+         
           <ToastContainer
             position="top-center"
             autoClose={5000}

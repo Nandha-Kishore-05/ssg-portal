@@ -14,7 +14,7 @@ func SavedDepartmentOptions(c *gin.Context) {
 		d.id AS department_id,
 		s.semester_name AS semester_name,
 		s.id AS semester_id,
-		t.classroom AS classroom,
+	
 		ay.id AS academic_year_id,
 		ay.academic_year AS academic_year_name
 		
@@ -39,21 +39,21 @@ func SavedDepartmentOptions(c *gin.Context) {
 		var departmentID string
 		var semesterName string
 		var semesterID string
-		var classroom string
+		// var classroom string
 		var academicYearID string
 		var academicYearName string
 
-		if err := rows.Scan(&departmentName, &departmentID, &semesterName, &semesterID, &classroom, &academicYearID, &academicYearName); err != nil {
+		if err := rows.Scan(&departmentName, &departmentID, &semesterName, &semesterID, &academicYearID, &academicYearName); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		SavedDeptOptions = append(SavedDeptOptions, map[string]string{
-			"department_name":    departmentName,
-			"department_id":      departmentID,
-			"semester_name":      semesterName,
-			"semester_id":        semesterID,
-			"classroom":          classroom,
+			"department_name": departmentName,
+			"department_id":   departmentID,
+			"semester_name":   semesterName,
+			"semester_id":     semesterID,
+			// "classroom":          classroom,
 			"academic_year_id":   academicYearID,
 			"academic_year_name": academicYearName,
 		})

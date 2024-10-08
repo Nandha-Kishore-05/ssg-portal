@@ -12,7 +12,10 @@ import {
 import LogoutIcon from '@mui/icons-material/Logout';
 import './style.css';
 import { Book } from "@mui/icons-material";
-
+import FolderIcon from '@mui/icons-material/Folder';
+import RoomIcon from '@mui/icons-material/Room';
+import SchoolIcon from '@mui/icons-material/School';
+import PersonIcon from '@mui/icons-material/Person';
 
 function SideBar(props) {
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
@@ -63,7 +66,14 @@ function SideBar(props) {
           return   <Book />
         case 'Log Out':
           return  <LogoutIcon />
-         
+        case 'Master Timetable':
+          return  <FolderIcon />
+        case 'Venue Table':
+            return  <RoomIcon  />
+        case 'Student Allocation':
+            return  <SchoolIcon  />
+        case 'Student Timetable':
+              return  <PersonIcon  />
       default:
         return null; // Return null if no matching icon
     }

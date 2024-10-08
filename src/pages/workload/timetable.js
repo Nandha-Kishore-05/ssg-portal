@@ -12,12 +12,12 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SearchIcon from '@mui/icons-material/Search';
 import './save.css';
-import { useNavigate } from 'react-router-dom';
+
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
 const SavedTimetable = (props) => {
-  const navigate = useNavigate();
+
   const [schedule, setSchedule] = useState([]);
   const [days, setDays] = useState([]);
   const [times, setTimes] = useState([]);
@@ -30,13 +30,13 @@ const SavedTimetable = (props) => {
 
   useEffect(() => {
     const fetchSchedule = async () => {
-      if (!props.departmentID || !props.semesterID) {
+      if (!props.departmentID || !props.semesterID || !props.academicYearID) {
         console.error('Department ID and Semester ID are required');
         return;
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/saved/${props.departmentID}/${props.semesterID}/${props.academicYearID }`);
+        const response = await axios.get(`http://localhost:8080/timetable/saved/${props.departmentID}/${props.semesterID}/${props.academicYearID}`);
         const data = response.data;
 
         const allDays = new Set();
@@ -66,7 +66,7 @@ const SavedTimetable = (props) => {
     };
 
     fetchSchedule();
-  }, [props.departmentID, props.semesterID]);
+  }, [props.departmentID, props.semesterID,props.academicYearID]);
 
   const fetchAvailableFaculty = async (day, time) => {
     try {
@@ -205,13 +205,18 @@ const SavedTimetable = (props) => {
       .then(response => {
         console.log("Response from server:", response.data);
         toast.success('Timetable updated successfully!');
-      props.setIsOpen(false)
+
+        setTimeout(() => {
+          window.location.reload();  // Refresh the page immediately
+        }, 0); 
+        props.setIsOpen(false);  // No delay (effectively microseconds)
       })
       .catch(error => {
         console.error('Failed to update timetable:', error);
         toast.error('Failed to update timetable');
       });
   };
+  
   
 
   const filteredFaculty = availableFaculty.filter(faculty =>
@@ -279,6 +284,7 @@ const SavedTimetable = (props) => {
                         <div key={idx}>
                           <div>{item.subject_name}</div>
                           <div>{item.faculty_name}</div>
+                          {/* <div>{item.classroom}</div> */}
                         </div>
                       ))
                     ) : (

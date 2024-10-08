@@ -11,12 +11,10 @@ import (
 )
 
 func GenerateTimetable(c *gin.Context) {
-	
+
 	departmentIDStr := c.Param("departmentID")
 	semesterIDStr := c.Param("semesterId")
 	academicYearIDStr := c.Param("academicYearID")
-
-
 
 	departmentID, err := strconv.Atoi(departmentIDStr)
 	if err != nil {
@@ -48,14 +46,12 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-	
 	days, err := timetables.GetAvailableDays()
 	if err != nil {
 		log.Printf("Error getting available days: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve available days"})
 		return
 	}
-
 
 	hours, err := timetables.GetHours()
 	if err != nil {
@@ -64,14 +60,12 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-
 	subjects, err := timetables.GetSubjects(departmentID, semesterID)
 	if err != nil {
 		log.Printf("Error getting subjects for department ID %d: %v", departmentID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve subjects"})
 		return
 	}
-
 
 	faculty, err := timetables.GetFaculty()
 	if err != nil {
@@ -80,8 +74,7 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-
-	classrooms, err := timetables.GetClassrooms(departmentID, semesterID,academicYearID)
+	classrooms, err := timetables.GetClassrooms(departmentID, semesterID, academicYearID)
 	if err != nil {
 		log.Printf("Error getting classrooms for department ID %d: %v", departmentID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve classrooms"})
@@ -95,14 +88,12 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-
-	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters,academicYear, departmentID, semesterID,academicYearID  )
+	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, academicYear, departmentID, semesterID, academicYearID)
 	if timetable == nil {
 		log.Printf("Error generating timetable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to generate timetable"})
 		return
 	}
-
 
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, timetable)

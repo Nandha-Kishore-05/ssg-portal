@@ -13,21 +13,12 @@ func GetTimetable(c *gin.Context) {
 	classroom := c.Param("departmentID")
 	sem := c.Param("semesterId")
 	AcademicYear := c.Param("academicYearID")
-	var name string
-	err := config.Database.QueryRow(`
-		SELECT name
-		FROM classrooms
-		WHERE department_id = ? AND semester_id = ? AND  academic_year_id = ?`, classroom, sem,AcademicYear).Scan(&name)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch department ID: " + err.Error()})
-		return
-	}
 
 	var entries []models.TimetableEntry
 	rows, err := config.Database.Query(`
     SELECT id, day_name, start_time, end_time, subject_name, faculty_name, classroom, semester_id,department_id,status,academic_year
     FROM timetable
-    WHERE classroom = ?`, name)
+    WHERE department_id = ? AND semester_id = ? AND  academic_year = ?`, classroom, sem, AcademicYear)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch timetable: " + err.Error()})
@@ -37,7 +28,7 @@ func GetTimetable(c *gin.Context) {
 
 	for rows.Next() {
 		var entry models.TimetableEntry
-		if err := rows.Scan(&entry.ID, &entry.DayName, &entry.StartTime, &entry.EndTime, &entry.SubjectName, &entry.FacultyName, &entry.Classroom, &entry.SemesterID, &entry.DepartmentID, &entry.Status,&entry.AcademicYear); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.DayName, &entry.StartTime, &entry.EndTime, &entry.SubjectName, &entry.FacultyName, &entry.Classroom, &entry.SemesterID, &entry.DepartmentID, &entry.Status, &entry.AcademicYear); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan timetable entry: " + err.Error()})
 			return
 		}
@@ -46,7 +37,6 @@ func GetTimetable(c *gin.Context) {
 
 	c.JSON(http.StatusOK, entries)
 }
-
 
 // package timetables
 
@@ -75,7 +65,6 @@ func GetTimetable(c *gin.Context) {
 // 	}
 
 // 	var entries []models.TimetableEntry
-
 
 // 	rows, err := config.Database.Query(
 // 		`SELECT t.id, t.day_name, t.start_time, t.end_time, s.id AS subject_id, f.id AS faculty_id, t.classroom, t.semester_id, t.department_id, t.status

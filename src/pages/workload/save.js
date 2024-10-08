@@ -409,7 +409,7 @@ function SaveTimetable() {
   )}
 </td>
 
-                  <td>Classroom</td>
+                  {/* <td>Classroom</td> */}
                   <td>Academic-Year</td>
                   <td>Action</td>
                 </tr>
@@ -421,7 +421,7 @@ function SaveTimetable() {
                       <td className="dashboard-table-cell">{indexOfFirstRow + index + 1}</td>
                       <td className="dashboard-table-cell">{row.department_name}</td>
                       <td className="dashboard-table-cell">{row.semester_name}</td>
-                      <td className="dashboard-table-cell">{row.classroom}</td>
+                      {/* <td className="dashboard-table-cell">{row.classroom}</td> */}
                       <td className="dashboard-table-cell">{row.academic_year_name}</td>
                       <td className="dashboard-table-cell">
                         <VisibilityRounded

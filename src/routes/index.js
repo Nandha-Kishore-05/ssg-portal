@@ -8,6 +8,14 @@ import ManualEntry from "../entry/manualEntry";
 import SubjectEntry from "../pages/entry/subjectentry";
 import SubjectAllocation from "../pages/allocation/allocation";
 import Logout from "../auth/logout";
+import Mastertimetable from "../pages/masterTimetable/mastertimetable";
+import Masterdepartment from "../pages/masterTimetable/masterdepartment";
+import MasterSemester from "../pages/masterTimetable/masterSemester";
+import Venue from "../pages/workload/venue/table";
+import StudentEntry from "../pages/student/studentEntry";
+import StudentTable from "../pages/student/studentTable";
+import StudentTimetable from "../pages/student/studentTimetable";
+
 
 
 
@@ -52,6 +60,30 @@ const routes = [
   {
     path: "/subjectallocation",
     element: <SubjectAllocation />,
+  },
+  {
+    path: "/mastertimetable",
+    element: <Mastertimetable />,
+  },
+  {
+    path: "/masterdepartment",
+    element: <Masterdepartment />,
+  },
+  {
+    path: "/mastersemester",
+    element: <MasterSemester />,
+  },
+  {
+    path: "/venueTable",
+    element: <Venue />,
+  },
+  {
+    path: "/studentallocation",
+    element: <StudentEntry />,
+  },
+  {
+    path: "/studentTable",
+    element: <StudentTable />,
   },
   {
     path: "/logout",

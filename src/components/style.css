@@ -52,3 +52,82 @@
   height: max-content;
   background-color: #0e78dc;
 }
+.custom-card {
+  position: relative; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 280px;
+  height: 200px;
+  border: 1px solid #2b2b2b; 
+  border-radius: 12px;
+  background-color: #1c1c1e; 
+  box-shadow: 0px 6px 6px rgba(223, 219, 219, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.download-icon{
+  position: absolute; 
+  top: 10px; 
+  right: 10px; 
+  font-size: 40px; 
+  color: rgb(5, 119, 201); 
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.download-icon:hover {
+  color: #00bfff;
+  transform: scale(1.2); 
+}
+
+
+
+
+.plus-icon {
+  font-size: 36px;
+  font-weight: bold;
+  color: #fff; /* White plus icon */
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.plus-icon:hover {
+  color: #007bff;
+}
+
+.year-text {
+  font-size: 22px; 
+  color: #ffffff;  
+  font-weight: bold; 
+  text-align: center; 
+  padding: 10px; 
+  letter-spacing: 1px; 
+}
+
+.card-title {
+  font-size: 18px; 
+  font-weight: bold;
+  color: #ccc; 
+  margin-bottom: 10px; 
+  text-align: center; 
+}
+
+
+
+.dotted-square {
+  display: flex;
+  justify-content: space-around;
+
+  align-items: center;
+  width: 100%; 
+  padding: 0 15px; 
+}

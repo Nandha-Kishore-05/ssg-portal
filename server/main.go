@@ -10,7 +10,9 @@ import (
 	"ssg-portal/timetables/otp"
 	"ssg-portal/timetables/role"
 	"ssg-portal/timetables/routes"
-    "github.com/gin-contrib/cors"
+	"ssg-portal/timetables/studententry"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,16 +21,16 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-        AllowOrigins:     []string{"http://localhost:3000"},
-        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-        AllowHeaders:     []string{"Authorization", "Content-Type"},
-        ExposeHeaders:    []string{"Content-Length"},
-        AllowCredentials: true,
-    }))
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Authorization", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
-    r.POST("/login", auth.Login)
+	r.POST("/login", auth.Login)
 	r.GET("/timetable/:departmentID/:semesterId/:academicYearID", routes.GenerateTimetable)
-    r.POST("/timetable/save", timetables.SaveTimetable)
+	r.POST("/timetable/save", timetables.SaveTimetable)
 	r.GET("/timetable/saved/:departmentID/:semesterId/:academicYearID", timetables.GetTimetable)
 	r.GET("/timetable/faculty/:faculty_name/:academicYearID", timetables.FacultyTimetable)
 	r.GET("/timetable/lab/:subject_name", timetables.LabTableTimetable)
@@ -41,13 +43,20 @@ func main() {
 	r.GET("/saved/deptoptions", timetables.SavedDepartmentOptions)
 	r.PUT("/timetable/update", timetables.UpdateTimetable)
 	r.GET("/manual/options", manualentry.DayAndTimeOptions)
-    r.POST("/manual/submit", manualentry.SubmitManualEntry)
+	r.POST("/manual/submit", manualentry.SubmitManualEntry)
 	r.GET("/acdemicYearOptions", timetables.AcademicYearOptions)
+	r.GET("/classroomOptions", timetables.VenueOptions)
 	r.GET("/periodallocation", allocation.Subjectallocation)
 	r.PUT("/periodallocationedit", allocation.UpdateAllocation)
-    r.GET("/getResource",role.GetResources)
-	r.POST("/send-otp",otp.SendOTPHandler)
-	r.POST("/verify-otp",otp.VerifyOTPHandler)
+	r.GET("/getResource", role.GetResources)
+	r.POST("/send-otp", otp.SendOTPHandler)
+	r.POST("/verify-otp", otp.VerifyOTPHandler)
 	r.GET("/downloadTimetable/:semesterId", excel.DownloadTimetable)
+	r.GET("/venueTimetable/:classroom", timetables.VenueTimetable)
+	r.GET("/venueTimetableOptions", timetables.ClassroomOptions)
+	r.POST("/studententry/upload", studententry.InsertStudentEntries)
+	r.GET("/studentTimetable/:studentID", studententry.StudentTimetable)
+	r.GET("/download/:academic_year_id/:type", excel.Masterdownload)
+	r.GET("/studentoptions", studententry.GetStudentOptions)
 	r.Run(":8080")
 }

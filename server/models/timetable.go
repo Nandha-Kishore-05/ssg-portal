@@ -18,6 +18,7 @@ type Subject struct {
 	Period       int    `json:"periods"`
 	Status       int    `json:"status"`
 	SemesterID   int    `json:"semester_id"`
+	CourseCode   string `json:"course_code"`
 }
 
 type Faculty struct {
@@ -32,7 +33,7 @@ type Classroom struct {
 	ClassroomName string `json:"name"`
 	DepartmentID  int    `json:"department_id"`
 	SemesterID    int    `json:"semester_id"`
-	 AcademicYear    int    `json:"academic_year_id"`
+	AcademicYear  int    `json:"academic_year_id"`
 }
 
 type FacultySubject struct {
@@ -55,7 +56,8 @@ type TimetableEntry struct {
 	SubjectID       int    `json:"subject_id"`
 	FacultyID       int    `json:"faculty_id"`
 	TimetableStatus int    `json:"timetable_status"`
-    AcademicYear    int    `json:"academic_year_id"`
+	AcademicYear    int    `json:"academic_year_id"`
+	CourseCode      string `json:"course_code"`
 }
 type Class struct {
 	Day          string `json:"day_name"`
@@ -113,7 +115,8 @@ type ManualEntryRequest struct {
 	Faculty        string `json:"faculty_name"`
 	Classroom      string `json:"classroom"`
 	Status         string `json:"status"`
-	// Lab            int    `json:"status"`
+	AcademicYear   int    `json:"academic_year"`
+	CourseCode     string `json:"course_code"`
 }
 type BulkManualEntryRequest struct {
 	Entries []ManualEntryRequest `json:"entries"`
@@ -132,36 +135,83 @@ type SubjectInfo struct {
 	Periods        int    `json:"periods"`
 	Status         string `json:"status"`
 	FacultyName    string `json:"faculty_name"`
-	FacultyID      int   `json:"faculty_id"`
-    DepartmentID    int    `json:"department_id"`
-    SemesterID      int    `json:"semester_id"`
+	FacultyID      int    `json:"faculty_id"`
+	DepartmentID   int    `json:"department_id"`
+	SemesterID     int    `json:"semester_id"`
 }
 type Resource struct {
-	ID     int     `json:"id"`
-	Name   string  `json:"name"`
-	Icon   string  `json:"icon"`
-	Path   string  `json:"path"`
-	SortBy int     `json:"sort_by"`
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Icon   string `json:"icon"`
+	Path   string `json:"path"`
+	SortBy int    `json:"sort_by"`
 }
 type EditRequest struct {
-	ID              int    `json:"id"`
-	SubjectName     string `json:"subject_name"`
-	OldSubjectName  string `json:"old_subject_name"`
-	DepartmentID    int    `json:"department_id"`
-	SemesterID      int    `json:"semester_id"`
+	ID             int    `json:"id"`
+	SubjectName    string `json:"subject_name"`
+	OldSubjectName string `json:"old_subject_name"`
+	DepartmentID   int    `json:"department_id"`
+	SemesterID     int    `json:"semester_id"`
 }
 type UpdateRequest struct {
-	SubjectID     int    `json:"id"`
-	Periods       int    `json:"periods"`
-	SubjectName   string `json:"subject_name"`
+	SubjectID      int    `json:"id"`
+	Periods        int    `json:"periods"`
+	SubjectName    string `json:"subject_name"`
 	OldSubjectName string `json:"old_subject_name"`
-	DepartmentID  int    `json:"department_id"`
-	SemesterID    int    `json:"semester_id"`
+	DepartmentID   int    `json:"department_id"`
+	SemesterID     int    `json:"semester_id"`
 	FacultyName    string `json:"faculty_name"`
-	OldFacultyName  string `json:"old_faculty_name"`
-	 FacultyID      *int   `json:"faculty_id"`
+	OldFacultyName string `json:"old_faculty_name"`
+	FacultyID      *int   `json:"faculty_id"`
 }
-type AcademicYear struct{
-	 AcademicYear    int    `json:"academic_year_id"`
-	 AcademicYearName string    `json:"academic_year"`
+type AcademicYear struct {
+	AcademicYear     int    `json:"academic_year_id"`
+	AcademicYearName string `json:"academic_year"`
+}
+type VenueTimetable struct {
+	DayName     string `json:"day_name"`
+	StartTime   string `json:"start_time"`
+	EndTime     string `json:"end_time"`
+	SubjectName string `json:"subject_name"`
+	FacultyName string `json:"faculty_name"`
+	SemesterID  int    `json:"semester_id"`
+}
+type Student struct {
+	StudentName string `json:"Student Name"`
+	RollNumber  string `json:"Roll Number"`
+	CourseName  string `json:"Course Name"`
+	CourseCode  string `json:"Course Code"`
+}
+
+type StudentEntryRequest struct {
+	Students     []Student `json:"students"`
+	Department   int       `json:"department"`
+	Semester     int       `json:"semester"`
+	AcademicYear int       `json:"academicYear"`
+}
+type StudentOptions struct {
+	StudentID      int    `json:"student_id"`
+	StudentName    string `json:"student_name"`
+	StudentRollNo  string `json:"roll_no"`
+	DepartmentID   int    `json:"department_id"`
+	DepartmentName string `json:"department_name"`
+	SemesterID     int    `json:"semester_id"`
+	SemesterName   string `json:"semester_name"`
+	AcademicYearID int    `json:"academic_year_id"`
+	AcademicYear   string `json:"academic_year"`
+}
+type StudentTimetable struct {
+	ID             int    `json:"id"`
+	DayName        string `json:"day_name"`
+	StartTime      string `json:"start_time"`
+	EndTime        string `json:"end_time"`
+	Classroom      string `json:"classroom"`
+	SubjectName    string `json:"subject_name"`
+	FacultyName    string `json:"faculty_name"`
+	Status         int    `json:"status"`
+	StudentID      int    `json:"student_id"`
+	CourseCode     string `json:"course_code"`
+	AcademicYearID int    `json:"academic_year_id"`
+	DepartmentID   int    `json:"department_id"`
+	SemesterID     int    `json:"semester_id"`
 }
