@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './entry.css';
-
 import axios from 'axios';
 import CustomButton from '../components/button';
 import InputBox from '../components/input';
@@ -9,10 +8,11 @@ import CustomSelect from '../components/select';
 import { Modal, Box, Typography } from '@mui/material'; // Import Modal components
 
 function ManualEntry() {
-    const [departments, setDepartments] = useState([]); // Update state to handle multiple departments
+    const [departments, setDepartments] = useState([]);
     const [deptOptions, setDeptOptions] = useState([]);
     const [semester, setSemester] = useState([]);
     const [semOptions, setSemOptions] = useState([]);
+    const [filteredSemOptions, setFilteredSemOptions] = useState([]); // State for filtered semesters
     const [day, setDay] = useState(null);
     const [dayOptions, setDayOptions] = useState([]);
     const [startTime, setStartTime] = useState(null);
@@ -24,107 +24,127 @@ function ManualEntry() {
     const [faculty, setFaculty] = useState(null);
     const [facultyOptions, setFacultyOptions] = useState([]);
     const [academicYear, setAcademicYear] = useState(null);
-    const [academicsOptions, setAcademicsOptions] = useState(null);
+    const [academicsOptions, setAcademicsOptions] = useState([]);
     const [venue, setVenue] = useState(null);
-    const [venueOptions, setVenueOptions] = useState(null);
+    const [venueOptions, setVenueOptions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
-    
 
     useEffect(() => {
-        axios.get('http://localhost:8080/manual/options')
-            .then(response => {
+        // Fetching initial options from the backend
+        const fetchOptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/manual/options');
                 setDayOptions(response.data.dayOptions);
                 setStartTimeOptions(response.data.startTimeOptions);
                 setEndTimeOptions(response.data.endTimeOptions);
                 setFacultyOptions(response.data.facultyOptions);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error fetching options:', error);
+            }
+        };
+        fetchOptions();
+    }, []);
+
+    useEffect(() => {
+        const fetchDeptOptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/timetable/options');
+                setDeptOptions(response.data);
+            } catch (error) {
+                console.error('Error fetching department options:', error);
+            }
+        };
+        fetchDeptOptions();
+    }, []);
+
+    useEffect(() => {
+        const fetchSemOptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/timetable/semoptions');
+                setSemOptions(response.data);
+            } catch (error) {
+                console.error('Error fetching semester options:', error);
+            }
+        };
+        fetchSemOptions();
+    }, []);
+
+    useEffect(() => {
+        const fetchAcademicYears = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/acdemicYearOptions');
+                setAcademicsOptions(response.data);
+            } catch (error) {
+                console.error('Error fetching academic year options:', error);
+            }
+        };
+        fetchAcademicYears();
+    }, []);
+
+    useEffect(() => {
+        const fetchClassroomOptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/classroomOptions');
+                setVenueOptions(response.data);
+            } catch (error) {
+                console.error('Error fetching classroom options:', error);
+            }
+        };
+        fetchClassroomOptions();
+    }, []);
+
+    // Effect to update semesters based on the selected academic year
+    useEffect(() => {
+        if (academicYear) {
+            const yearLabel = academicYear.label.toUpperCase();
+            const isOdd = /ODD/.test(yearLabel); // Check if it contains 'ODD'
+            const filteredSemesters = semOptions.filter(sem => {
+                // Show only odd or even semesters based on the selected academic year
+                return isOdd ? /S[1357]/i.test(sem.label) : /S[2468]/i.test(sem.label);
             });
-    }, []);
+            setFilteredSemOptions(filteredSemesters);
+        } else {
+            // Reset semesters if no academic year is selected
+            setFilteredSemOptions(semOptions);
+        }
+    }, [academicYear, semOptions]);
 
-    useEffect(() => {
-        axios.get('http://localhost:8080/timetable/options')
-          .then(response => {
-            setDeptOptions(response.data);
-          })
-          .catch(error => {
-            console.error('Error fetching department options:', error);
-          });
-    }, []);
-    
-    useEffect(() => {
-        axios.get('http://localhost:8080/timetable/semoptions')
-          .then(response => {
-            setSemOptions(response.data);
-          })
-          .catch(error => {
-            console.error('Error fetching semester options:', error);
-          });
-    }, []);
-
-    useEffect(() => {
-        axios.get('http://localhost:8080/acdemicYearOptions')
-          .then(response => {
-            setAcademicsOptions(response.data);
-          })
-          .catch(error => {
-            console.error('Error fetching semester options:', error);
-          });
-      }, []);
-
-      useEffect(() => {
-        axios.get('http://localhost:8080/classroomOptions')
-          .then(response => {
-            setVenueOptions(response.data);
-          })
-          .catch(error => {
-            console.error('Error fetching semester options:', error);
-          });
-      }, []);
-
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (semester.length === 0) {
             console.error("No semesters selected");
             return;
         }
 
-        // Loop through each semester and each department and submit the form data separately
-        semester.forEach((sem) => {
-            departments.forEach((dept) => {
-               
-                const data = {
-                    subject_name: subject,
-                    department_id: dept.value,
-                    semester_id: sem.value,
-                    // status: status,
-                    day_name: day ? day.value : null,
-                    start_time: startTime ? startTime.value : null,
-                    end_time: endTime ? endTime.value : null,
-                    faculty_name: faculty ? faculty.value : null,
-                    classroom : venue ? venue.value : null,
-                    academic_year: academicYear? academicYear.value : null,
-                    course_code : courseCode,
-                };
+        try {
+            for (const sem of semester) {
+                for (const dept of departments) {
+                    const data = {
+                        subject_name: subject,
+                        department_id: dept.value,
+                        semester_id: sem.value,
+                        day_name: day ? day.value : null,
+                        start_time: startTime ? startTime.value : null,
+                        end_time: endTime ? endTime.value : null,
+                        faculty_name: faculty ? faculty.value : null,
+                        classroom: venue ? venue.value : null,
+                        academic_year: academicYear ? academicYear.value : null,
+                        course_code: courseCode,
+                    };
 
-                console.log('Data to be sent for department:', dept.value, 'and semester:', sem.value, data);
+                    console.log('Data to be sent for department:', dept.value, 'and semester:', sem.value, data);
 
-                axios.post('http://localhost:8080/manual/submit', data)
-                    .then(response => {
-                        console.log('Form submitted successfully for department', dept.value, 'and semester', sem.value, response.data);
-                        setIsModalOpen(true); // Open the modal upon successful submission
-                    })
-                    .catch(error => {
-                        console.error('Error submitting form for department', dept.value, 'and semester', sem.value, error);
-                    });
-            });
-        });
+                    await axios.post('http://localhost:8080/manual/submit', data);
+                    console.log('Form submitted successfully for department', dept.value, 'and semester', sem.value);
+                    setIsModalOpen(true); // Open the modal upon successful submission
+                }
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+        }
     };
 
-    
-
     const handleCloseModal = () => {
-        setIsModalOpen(false); 
+        setIsModalOpen(false);
     };
 
     return (
@@ -138,52 +158,50 @@ function ManualEntry() {
                             <h1>Here you can upload the Manual entry</h1>
                         </center>
                         <br />
-                   
                         <div className="form-group">
-                            {/* <div className='bulk-button'>
-                                <CustomButton
-                                    width="150px"
-                                    label="Bulk Edit"
-                                    backgroundColor="#0878d3"
-                                    onClick={handleBulkEditClick} // Trigger navigation on click
-                                />
-                            </div> */}
-                            <div className="form-group">
-                                <InputBox
-                                    label="SUBJECT NAME"
-                                    placeholder="SUBJECT NAME"
-                                    value={subject}
-                                    onChange={setSubject}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <InputBox
-                                    label="COURSE CODE"
-                                    placeholder="COURSE CODE"
-                                    value={courseCode}
-                                    onChange={setCourseCode}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <CustomSelect
-                                    label="DEPARTMENT"
-                                    placeholder="DEPARTMENT"
-                                    value={departments}
-                                    onChange={setDepartments}
-                                    options={deptOptions}
-                                    isMulti={true} // Enable multi-select
-                                />
-                                      </div>
-                                      <div className="form-group">
-                                <CustomSelect
-                                    label="SEMESTER"
-                                    placeholder="SEMESTER"
-                                    value={semester}
-                                    onChange={setSemester}
-                                    options={semOptions}
-                                    isMulti={true} 
-                                />
-                            </div>
+                            <InputBox
+                                label="SUBJECT NAME"
+                                placeholder="SUBJECT NAME"
+                                value={subject}
+                                onChange={setSubject}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <InputBox
+                                label="COURSE CODE"
+                                placeholder="COURSE CODE"
+                                value={courseCode}
+                                onChange={setCourseCode}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <CustomSelect
+                                label="DEPARTMENT"
+                                placeholder="DEPARTMENT"
+                                value={departments}
+                                onChange={setDepartments}
+                                options={deptOptions}
+                                isMulti={true} // Enable multi-select
+                            />
+                        </div>
+                        <div className="form-group">
+                            <CustomSelect
+                                label="ACADEMIC YEAR"
+                                placeholder="ACADEMIC YEAR"
+                                value={academicYear}
+                                onChange={setAcademicYear}
+                                options={academicsOptions}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <CustomSelect
+                                label="SEMESTER"
+                                placeholder="SEMESTER"
+                                value={semester}
+                                onChange={setSemester}
+                                options={filteredSemOptions} // Use filtered options
+                                isMulti={true}
+                            />
                         </div>
                         <div className="form-group">
                             <CustomSelect
@@ -203,7 +221,6 @@ function ManualEntry() {
                                 options={facultyOptions}
                             />
                         </div>
-                        
                         <div className='row'>
                             <CustomSelect
                                 label="START TIME"
@@ -229,17 +246,6 @@ function ManualEntry() {
                                 options={dayOptions}
                             />
                         </div>
-                        <div className="form-group">
-                            <CustomSelect
-                                label="ACADEMIC YEAR"
-                                placeholder="ACADEMIC YEAR"
-                                value={academicYear}
-                                onChange={setAcademicYear}
-                                options={academicsOptions}
-                            />
-                        </div>
-                       
-
                         <div className="center-button">
                             <CustomButton
                                 width="150px"
@@ -248,8 +254,6 @@ function ManualEntry() {
                                 onClick={handleSubmit}
                             />
                         </div>
-
-                   
                         <Modal
                             open={isModalOpen}
                             onClose={handleCloseModal}
@@ -260,17 +264,13 @@ function ManualEntry() {
                                 <Typography id="modal-title" variant="h5" component="h1" className="modal-title">
                                     Submission Successful!
                                 </Typography>
-                                <Typography id="modal-description" sx={{ mt: 2 }} className="modal-description">
+                                <Typography id="modal-description" className="modal-description">
                                     Your manual entry has been submitted successfully.
                                 </Typography>
-                                <div className="center-button">
-                                    <CustomButton
-                                        width="150px"
-                                        label="Close"
-                                        backgroundColor="#0878d3"
-                                        onClick={handleCloseModal}
-                                    />
-                                </div>
+                                <CustomButton
+                                    label="Close"
+                                    onClick={handleCloseModal}
+                                />
                             </Box>
                         </Modal>
                     </div>

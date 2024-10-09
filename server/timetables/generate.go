@@ -3,6 +3,7 @@ package timetables
 import (
 	"fmt"
 	"log"
+
 	"math/rand"
 	"ssg-portal/config"
 	"ssg-portal/models"
@@ -238,6 +239,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 							DepartmentID: departmentID,
 							AcademicYear: academicYearID,
 							CourseCode:   subject.CourseCode,
+							
 						}
 
 						if _, ok := timetable[day.DayName]; !ok {
