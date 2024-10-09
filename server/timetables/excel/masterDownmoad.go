@@ -29,11 +29,13 @@ func Masterdownload(c *gin.Context) {
 
 	query := fmt.Sprintf(`
 		SELECT t.day_name, t.start_time, t.end_time, t.classroom,
-		       t.subject_name, t.faculty_name, d.name AS department_name, ay.academic_year, t.semester_id
-		FROM timetable t
-		JOIN departments d ON t.department_id = d.id
-		JOIN academic_year ay ON t.academic_year = ay.id
-		WHERE ay.id = ? AND t.semester_id IN (%s)
+       t.subject_name, t.faculty_name, d.name AS department_name, may.academic_year, t.semester_id
+FROM timetable t
+JOIN departments d ON t.department_id = d.id
+JOIN academic_year ay ON t.academic_year = ay.id
+JOIN master_academic_year may ON ay.academic_year = may.id
+WHERE may.id = ? AND t.semester_id IN (%s)
+
 	`, semesterIDsStr)
 
 	rows, err := config.Database.Query(query, academicYearID)

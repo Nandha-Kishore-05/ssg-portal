@@ -11,9 +11,16 @@ import (
 func ClassroomOptions(c *gin.Context) {
 	// SQL query to fetch distinct classroom names, academic year names, and academic year IDs
 	query := `
-		SELECT DISTINCT t.classroom, ay.academic_year, ay.id 
-		FROM timetable t 
-		JOIN academic_year ay ON t.academic_year = ay.id
+	SELECT DISTINCT 
+    t.classroom, 
+    may.academic_year, 
+    t.academic_year
+FROM 
+    timetable t 
+
+JOIN 
+    master_academic_year may ON t.academic_year = may.id
+
 	`
 
 	rows, err := config.Database.Query(query)

@@ -19,7 +19,7 @@ func GetStudentOptions(c *gin.Context) {
 	JOIN student s ON scm.student_id = s.id
 	JOIN departments d ON scm.department_id = d.id
 	JOIN semester sem ON scm.semester_id = sem.id
-	JOIN academic_year ay ON scm.academic_year_id = ay.id
+	JOIN master_academic_year ay ON scm.academic_year_id = ay.id
 	`
 
 	// Execute the query

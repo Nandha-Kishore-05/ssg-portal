@@ -2,6 +2,7 @@ package timetables
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"ssg-portal/config"
 	"ssg-portal/models"
@@ -357,7 +358,7 @@ func generateRandomTimetable(
 	semesterID int,
 	academicYearID int,
 ) FacultyBasedTimetable {
-
+	log.Println(academicYearID)
 	skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID)
 	if err != nil {
 		fmt.Println("Error fetching timetable skips:", err)
@@ -365,6 +366,7 @@ func generateRandomTimetable(
 	}
 
 	generate := func() FacultyBasedTimetable {
+
 		timetable := make(FacultyBasedTimetable)
 		subjectsAssigned := make(map[string]map[string]bool)
 		periodsLeft := make(map[string]int)
@@ -480,6 +482,7 @@ func generateRandomTimetable(
 					} else {
 
 						entry := models.TimetableEntry{
+
 							DayName:      day.DayName,
 							StartTime:    startTime,
 							EndTime:      endTime,

@@ -15,28 +15,32 @@ func StudentTimetable(c *gin.Context) {
 
 	query := `
 	SELECT 
-		t.id,
-		t.day_name,
-		t.start_time,
-		t.end_time,
-		t.classroom,
-		t.subject_name,
-		t.faculty_name,
-		t.status,
-		scm.student_id,
-		scm.course_code,
-		scm.academic_year_id,
-		scm.department_id,
-		scm.semester_id
-	FROM 
-		timetable t
-	JOIN 
-		student_course_mapping scm ON t.course_code = scm.course_code 
-								   AND t.academic_year = scm.academic_year_id
-								   AND t.department_id = scm.department_id
-								   AND t.semester_id = scm.semester_id
-	WHERE 
-		scm.student_id = ?
+    t.id,
+    t.day_name,
+    t.start_time,
+    t.end_time,
+    t.classroom,
+    t.subject_name,
+    t.faculty_name,
+    t.status,
+    scm.student_id,
+    scm.course_code,
+    scm.academic_year_id,
+    scm.department_id,
+    scm.semester_id
+FROM 
+    timetable t
+JOIN 
+    student_course_mapping scm ON t.course_code = scm.course_code 
+                               AND t.academic_year = scm.academic_year_id
+                               AND t.department_id = scm.department_id
+                               AND t.semester_id = scm.semester_id
+
+JOIN 
+    master_academic_year may ON t.academic_year = may.id
+WHERE 
+    scm.student_id = ?
+
 	`
 
 	rows, err := config.Database.Query(query, studentID)

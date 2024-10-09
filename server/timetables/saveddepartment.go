@@ -10,22 +10,22 @@ import (
 func SavedDepartmentOptions(c *gin.Context) {
 	rows, err := config.Database.Query(`
 	SELECT 
-		DISTINCT d.name AS department_name,
-		d.id AS department_id,
-		s.semester_name AS semester_name,
-		s.id AS semester_id,
-	
-		ay.id AS academic_year_id,
-		ay.academic_year AS academic_year_name
-		
-	FROM 
-		timetable t
-	JOIN 
-		departments d ON t.department_id = d.id
-	JOIN 
-		semester s ON t.semester_id = s.id
-	LEFT JOIN
-		academic_year ay ON t.academic_year = ay.id
+    DISTINCT d.name AS department_name,
+    d.id AS department_id,
+    s.semester_name AS semester_name,
+    s.id AS semester_id,
+    may.id AS academic_year_id,
+    may.academic_year AS academic_year_name
+FROM 
+    timetable t
+JOIN 
+    departments d ON t.department_id = d.id
+JOIN 
+    semester s ON t.semester_id = s.id
+
+ JOIN 
+    master_academic_year may ON t.academic_year = may.id
+
 	`)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
