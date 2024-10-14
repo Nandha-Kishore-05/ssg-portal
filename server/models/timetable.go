@@ -20,7 +20,10 @@ type Subject struct {
 	SemesterID   int    `json:"semester_id"`
 	CourseCode   string `json:"course_code"`
 }
-
+type Section struct{
+	ID int `json:"id"`
+	SectionName string `json:"section_name"`
+}
 type Faculty struct {
 	ID           int    `json:"id"`
 	FacultyName  string `json:"name"`
@@ -34,6 +37,7 @@ type Classroom struct {
 	DepartmentID  int    `json:"department_id"`
 	SemesterID    int    `json:"semester_id"`
 	AcademicYear  int    `json:"academic_year_id"`
+	SectionID int `json:"section_id"`
 }
 
 type FacultySubject struct {
@@ -41,6 +45,9 @@ type FacultySubject struct {
 	SubjectID   int    `json:"subject_id"`
 	SemesterID  int    `json:"semester_id"`
 	SubjectName string `json:"subject_name"`
+	SectionID int `json:"section_id"`
+	AcademicYear    int    `json:"academic_year_id"`
+	DepartmentID    int    `json:"department_id"`
 }
 type TimetableEntry struct {
 	ID              int    `json:"id"`
@@ -58,6 +65,7 @@ type TimetableEntry struct {
 	TimetableStatus int    `json:"timetable_status"`
 	AcademicYear    int    `json:"academic_year_id"`
 	CourseCode      string `json:"course_code"`
+    SectionID int `json:"section_id"`
 }
 type Class struct {
 	Day          string `json:"day_name"`

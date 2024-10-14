@@ -336,7 +336,7 @@ const Timetable = (props) => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/${props.departmentID}/${props.semesterID}/${props.academicYearID}`);
+        const response = await axios.get(`http://localhost:8080/timetable/${props.departmentID}/${props.semesterID}/${props.academicYearID}/${props.sectionID}`);
         const data = response.data;
 
         console.log('Fetched data:', data);
@@ -416,7 +416,8 @@ const Timetable = (props) => {
             semester_id: entry.semester_id,
             department_id: entry.department_id,
             academic_year_id : entry.academic_year_id,
-            course_code: entry.course_code
+            course_code: entry.course_code,
+            section_id : entry.section_id
           };
           timetableData.push(data);
         });

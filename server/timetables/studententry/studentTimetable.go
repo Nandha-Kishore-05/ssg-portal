@@ -15,6 +15,7 @@ func StudentTimetable(c *gin.Context) {
 
 	query := `
 	SELECT 
+	Distinct
     t.id,
     t.day_name,
     t.start_time,

@@ -36,7 +36,7 @@ const SavedTimetable = (props) => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/saved/${props.departmentID}/${props.semesterID}/${props.academicYearID}`);
+        const response = await axios.get(`http://localhost:8080/timetable/saved/${props.departmentID}/${props.semesterID}/${props.academicYearID}/${props.sectionID}`);
         const data = response.data;
 
         const allDays = new Set();
@@ -66,7 +66,7 @@ const SavedTimetable = (props) => {
     };
 
     fetchSchedule();
-  }, [props.departmentID, props.semesterID,props.academicYearID]);
+  }, [props.departmentID, props.semesterID,props.academicYearID,props.sectionID]);
 
   const fetchAvailableFaculty = async (day, time) => {
     try {

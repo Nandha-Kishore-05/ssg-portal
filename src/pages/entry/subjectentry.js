@@ -1,13 +1,14 @@
 
 
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { Modal, Fade, Button } from "@mui/material";
 import { ArrowBackIosRounded, ArrowForwardIosRounded } from '@mui/icons-material';
 import AppLayout from "../../layout/layout";
 import "./period.css";
+import CustomSelect from "../../components/select";
 
 const SubjectEntry = () => {
   const [excelData, setExcelData] = useState([]);
@@ -15,6 +16,83 @@ const SubjectEntry = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10); // Default rows per page
   const [openModal, setOpenModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [department, setDepartment] = useState(null);
+  const [deptOptions, setDeptOptions] = useState([]);
+  const [semester, setSemester] = useState(null);
+  const [semOptions, setSemOptions] = useState([]);
+  const [academicYear, setAcademicYear] = useState(null);
+  const [academicsOptions, setAcademicsOptions] = useState([]);
+  const [filteredSemOptions, setFilteredSemOptions] = useState([]);
+  const [venue, setVenue] = useState(null);
+  const [venueOptions, setVenueOptions] = useState([]);
+  useEffect(() => {
+    axios.get('http://localhost:8080/timetable/options')
+      .then(response => {
+        setDeptOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching department options:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/timetable/semoptions')
+      .then(response => {
+        setSemOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching semester options:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/acdemicYearOptions')
+      .then(response => {
+        setAcademicsOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching academic year options:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (academicYear && academicYear.label) {
+      // Check if the academic year label contains 'ODD' or 'EVEN' (case-insensitive)
+      const isOddYear = /ODD/i.test(academicYear.label); // Check for 'ODD' in a case-insensitive manner
+
+      const filteredSemOptions = semOptions.filter(sem => {
+        const semNumber = parseInt(sem.label.replace(/^\D+/g, ''), 10); // Extract the number from the semester label
+        return isOddYear ? [1, 3, 5, 7].includes(semNumber) : [2, 4, 6, 8].includes(semNumber);
+      });
+
+      setFilteredSemOptions(filteredSemOptions);
+    } else {
+      setFilteredSemOptions(semOptions); // Reset to show all if no academic year is selected
+    }
+  }, [academicYear, semOptions]);
+
+  useEffect(() => {
+    // Check if department, academicYear, and semester are valid before making the API call
+    if (department && academicYear && semester) {
+      axios.get(`http://localhost:8080/classroomOptions?department_id=${department.value}&academic_year_id=${academicYear.value}&semester_id=${semester.value}`)
+        .then(response => {
+          // Ensure that response.data is an array before setting it
+          const options = Array.isArray(response.data) ? response.data : [];
+          setVenueOptions(options);
+        })
+        .catch(error => {
+          console.error('Error fetching venue options:', error);
+          // Set venue options to empty array on error
+          setVenueOptions([]);
+        });
+    } else {
+      // Reset venue options if any required input is null
+      setVenueOptions([]);
+    }
+  }, [department, academicYear, semester]);
+  
+
+  
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -47,8 +125,17 @@ const SubjectEntry = () => {
   const sendDataToBackend = () => {
     const jsonData = parseExcelToJson();
     console.log("Parsed Excel Data:", jsonData);
+
+    const requestData = {
+      department: department ? department.value : null,
+      semester: semester ? semester.value : null,
+      academicYear: academicYear ? academicYear.value : null,
+      classroom : venue ? venue.value : null,
+      subjectData : jsonData
+    };
+    console.log(requestData)
   
-    axios.post('http://localhost:8080/upload', jsonData)
+    axios.post('http://localhost:8080/upload',  requestData)
       .then(response => {
         console.log("Server response:", response);
         setSuccessMessage("Data uploaded successfully!");
@@ -77,32 +164,59 @@ const SubjectEntry = () => {
       title="Subject Entry"
       body={
         <div>
-          <input
+        <input
             accept=".xlsx, .xls"
             className="file-upload-input"
             type="file"
             onChange={handleFileUpload}
           />
-          <div className="upload-section">
-            <center><br />
-              <h2>Here you can upload the Subject Entry list</h2>
+    
+          <div style={{ backgroundColor: "white", padding: 17, marginTop: 20, borderRadius: "10px" }}>
+            <div style={{ display: 'flex', flexDirection: 'row', columnGap: 10, alignItems: "center", justifyContent: "space-between" }}>
+              <CustomSelect
+                placeholder="ACADEMIC YEAR"
+                value={academicYear}
+                onChange={setAcademicYear}
+                options={academicsOptions}
+              />
+              <CustomSelect
+                placeholder="SEMESTER"
+                value={semester}
+                onChange={setSemester}
+                options={filteredSemOptions} // Use filtered options here
+              />
+              <CustomSelect
+                placeholder="DEPARTMENT"
+                value={department}
+                onChange={setDepartment}
+                options={deptOptions}
+              />
+               <CustomSelect
+                          
+                                placeholder="CLASSROOM"
+                                value={venue}
+                                onChange={setVenue}
+                                options={venueOptions}
+                            />
               <button
-                className="upload-button"
+                className="student-upload-button"
                 onClick={() => document.querySelector('.file-upload-input').click()}
               >
                 Upload Excel
               </button>
-            </center>
+            </div>
           </div>
+
           {excelData.length > 0 && (
             <div className="table-section">
               <div className="scrollable-table">
                 <table className="data-table">
                   <thead>
                     <tr>
-                      {excelData[0].map((header, index) => (
-                        <th key={index} className="table-header">{header}</th>
-                      ))}
+                    {excelData[0].map((header, index) => (
+  <th key={index} className="table-header">{header}</th>
+))}
+
                     </tr>
                   </thead>
                   <tbody>

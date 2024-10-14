@@ -16,7 +16,7 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 	existingTimetable := make(map[string]map[string][]models.TimetableEntry)
 
 	rows, err := config.Database.Query(`
-        SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom, status, semester_id, department_id, academic_year, course_code 
+        SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom, status, semester_id, department_id, academic_year, course_code ,section_id
         FROM timetable`)
 	if err != nil {
 		return nil, err
@@ -26,9 +26,9 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 	for rows.Next() {
 		var dayName, startTime, endTime, subjectName, facultyName, classroom string
 		var courseCode []byte
-		var status, semesterID, departmentID, academicYearID int
+		var status, semesterID, departmentID, academicYearID,sectionID int
 
-		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID, &departmentID, &academicYearID, &courseCode); err != nil {
+		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID, &departmentID, &academicYearID, &courseCode,&sectionID); err != nil {
 			return nil, err
 		}
 
@@ -50,6 +50,7 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 			DepartmentID: departmentID,
 			AcademicYear: academicYearID,
 			CourseCode:   courseCodeStr,
+			SectionID: sectionID,
 		}
 
 		existingTimetable[facultyName][dayName] = append(existingTimetable[facultyName][dayName], entry)
@@ -95,6 +96,7 @@ func FetchTimetableSkips(departmentID int, semesterID int, academicYearID int) (
 			DepartmentID: departmentID,
 			AcademicYear: academicYearID,
 			CourseCode:   courseCode,
+		
 		}
 
 		skipEntries[dayName][startTime] = entry
@@ -103,7 +105,7 @@ func FetchTimetableSkips(departmentID int, semesterID int, academicYearID int) (
 	return skipEntries, nil
 }
 
-func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester, academicYear []models.AcademicYear, departmentID int, semesterID int, academicYearID int) map[string]map[string][]models.TimetableEntry {
+func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester,section []models.Section, academicYear []models.AcademicYear, departmentID int, semesterID int, academicYearID int,sectionID int) map[string]map[string][]models.TimetableEntry {
 
 	existingTimetable, err := FetchExistingTimetable()
 	if err != nil {
@@ -239,6 +241,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 							DepartmentID: departmentID,
 							AcademicYear: academicYearID,
 							CourseCode:   subject.CourseCode,
+							SectionID: sectionID,
 							
 						}
 
@@ -306,7 +309,7 @@ func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models
 			fmt.Println("Regenerating timetable due to unassigned periods or conflicts...")
 		}
 	} else {
-		return generateRandomTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, departmentID, semesterID, academicYearID)
+		return generateRandomTimetable(days, hours, subjects, faculty, classrooms, facultySubjects,section,semesters, departmentID, semesterID, academicYearID,sectionID)
 	}
 }
 
@@ -355,10 +358,12 @@ func generateRandomTimetable(
 	faculty []models.Faculty,
 	classrooms []models.Classroom,
 	facultySubjects []models.FacultySubject,
+	section []models.Section,
 	semesters []models.Semester,
 	departmentID int,
 	semesterID int,
 	academicYearID int,
+	sectionID int,
 ) FacultyBasedTimetable {
 	log.Println(academicYearID)
 	skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID)
@@ -456,6 +461,7 @@ func generateRandomTimetable(
 									DepartmentID: departmentID,
 									AcademicYear: academicYearID,
 									CourseCode:   subject.CourseCode,
+									SectionID: sectionID,
 								}
 
 								entry2 := models.TimetableEntry{
@@ -470,6 +476,7 @@ func generateRandomTimetable(
 									DepartmentID: departmentID,
 									AcademicYear: academicYearID,
 									CourseCode:   subject.CourseCode,
+									SectionID: sectionID,
 								}
 
 								timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry1)
@@ -496,6 +503,7 @@ func generateRandomTimetable(
 							DepartmentID: departmentID,
 							AcademicYear: academicYearID,
 							CourseCode:   subject.CourseCode,
+							SectionID: sectionID,
 						}
 
 						timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
@@ -540,7 +548,7 @@ func selectRandomClassroom(classrooms []models.Classroom, subject models.Subject
 	for _, cls := range classrooms {
 		if cls.DepartmentID == subject.DepartmentID {
 			for _, semester := range semesters {
-				if semester.ID == cls.SemesterID {
+				if semester.ID == cls.SemesterID  {
 					return cls.ClassroomName
 
 				}
@@ -558,7 +566,6 @@ func getSemesterID(classrooms []models.Classroom, subject models.Subject) int {
 	}
 	return 0
 }
-
 func selectRandomFaculty(facultyList []models.Faculty, subject models.Subject, facultySubjects []models.FacultySubject) string {
 	var availableFaculty []models.Faculty
 	for _, fac := range facultyList {

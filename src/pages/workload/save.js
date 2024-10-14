@@ -255,6 +255,7 @@ function SaveTimetable() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedSemester, setSelectedSemester] = useState(''); 
+  const [selectedSection, setSelectedSection] = useState(''); 
   const [selectedAcademicyear, setSelectedAcademicyear] = useState('');
   const [departments, setDepartments] = useState([]);
   const [semesters, setSemesters] = useState([]);
@@ -300,10 +301,11 @@ function SaveTimetable() {
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   // Handle view click for timetable details
-  const handleViewClick = (departmentId, semesterId, academicYearID) => {
+  const handleViewClick = (departmentId, semesterId, academicYearID,sectionID) => {
     setSelectedDepartment(departmentId);
     setSelectedSemester(semesterId);
     setSelectedAcademicyear(academicYearID);
+    setSelectedSection(sectionID)
     setIsOpen(true);
   };
 
@@ -346,13 +348,13 @@ function SaveTimetable() {
       });
   };
 
-  if (selectedDepartment && selectedSemester && selectedAcademicyear && isOpen) {
+  if (selectedDepartment && selectedSemester && selectedAcademicyear && selectedSection && isOpen) {
     return (
       <AppLayout
         rId={3}
         title="Saved Timetable"
         body={
-          <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} academicYearID={selectedAcademicyear} />
+          <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} academicYearID={selectedAcademicyear} sectionID={selectedSection}/>
         }
       />
     );
@@ -409,7 +411,7 @@ function SaveTimetable() {
   )}
 </td>
 
-                  {/* <td>Classroom</td> */}
+                  <td>Classroom</td>
                   <td>Academic-Year</td>
                   <td>Action</td>
                 </tr>
@@ -421,12 +423,12 @@ function SaveTimetable() {
                       <td className="dashboard-table-cell">{indexOfFirstRow + index + 1}</td>
                       <td className="dashboard-table-cell">{row.department_name}</td>
                       <td className="dashboard-table-cell">{row.semester_name}</td>
-                      {/* <td className="dashboard-table-cell">{row.classroom}</td> */}
+                      <td className="dashboard-table-cell">{row.classroom}</td>
                       <td className="dashboard-table-cell">{row.academic_year_name}</td>
                       <td className="dashboard-table-cell">
                         <VisibilityRounded
                           className="dashboard-view-icon"
-                          onClick={() => handleViewClick(row.department_id, row.semester_id, row.academic_year_id)}
+                          onClick={() => handleViewClick(row.department_id, row.semester_id, row.academic_year_id,row.section_id)}
                         />
                       </td>
                     </tr>

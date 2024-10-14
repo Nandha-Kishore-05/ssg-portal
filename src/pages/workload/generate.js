@@ -127,10 +127,12 @@ const GenerateTimetable = () => {
   const [viewedDepartment, setViewedDepartment] = useState(null);
   const [viewedSemester, setViewedSemester] = useState(null);
   const [viewedAcademic, setViewedAcademic] = useState(null);
+  const [viewedSection, setViewedSection] = useState(null);
   const [academicYear, setAcademicYear] = useState(null);
   const [academicsOptions, setAcademicsOptions] = useState([]);
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState(null); // Error state
+  const [section, setSection] = useState(null);
+  const [sectionOptions, setSectionOptions] = useState([]);
+
 
   // Fetch department options
   useEffect(() => {
@@ -140,11 +142,25 @@ const GenerateTimetable = () => {
         setDeptOptions(response.data);
       } catch (error) {
         console.error('Error fetching department options:', error);
-        setError('Failed to load department options.');
+ 
       }
     };
 
     fetchDepartments();
+  }, []);
+
+  useEffect(() => {
+    const fetchSection = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/timetable/sectionoptions');
+        setSectionOptions(response.data);
+      } catch (error) {
+        console.error('Error fetching section options:', error);
+    
+      }
+    };
+
+    fetchSection();
   }, []);
 
   // Fetch semester options
@@ -155,7 +171,7 @@ const GenerateTimetable = () => {
         setSemOptions(response.data);
       } catch (error) {
         console.error('Error fetching semester options:', error);
-        setError('Failed to load semester options.');
+   
       }
     };
 
@@ -170,7 +186,7 @@ const GenerateTimetable = () => {
         setAcademicsOptions(response.data);
       } catch (error) {
         console.error('Error fetching academic year options:', error);
-        setError('Failed to load academic year options.');
+   
       }
     };
 
@@ -198,6 +214,7 @@ const GenerateTimetable = () => {
       setViewedDepartment(department.value);
       setViewedSemester(semester.value);
       setViewedAcademic(academicYear.value);
+      setViewedSection(section.value)
       setIsOpen(true);
     } else {
       console.error('Please select all required options (department, semester, academic year).');
@@ -231,6 +248,12 @@ const GenerateTimetable = () => {
               onChange={setDepartment}
               options={deptOptions}
             />
+             <CustomSelect
+              placeholder="SECTION"
+              value={section}
+              onChange={setSection}
+              options={sectionOptions}
+            />
             <CustomButton
               width="150"
               label="Generate Timetable"
@@ -239,8 +262,8 @@ const GenerateTimetable = () => {
             />
           </div>
 
-          {(viewedDepartment && viewedSemester && viewedAcademic && isOpen) && 
-            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} academicYearID={viewedAcademic} />
+          {(viewedDepartment && viewedSemester && viewedAcademic && viewedSection && isOpen) && 
+            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} academicYearID={viewedAcademic} sectionID = {viewedSection}  />
           }
         </div>
       }
