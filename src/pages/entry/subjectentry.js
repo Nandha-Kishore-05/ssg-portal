@@ -131,6 +131,7 @@ const SubjectEntry = () => {
       semester: semester ? semester.value : null,
       academicYear: academicYear ? academicYear.value : null,
       classroom : venue ? venue.value : null,
+  
       subjectData : jsonData
     };
     console.log(requestData)

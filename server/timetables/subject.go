@@ -7,16 +7,29 @@ import (
 	"ssg-portal/models"
 )
 
-func GetSubjects(departmentID, semesterID int) ([]models.Subject, error) {
+func GetSubjects(departmentID, semesterID, academicYearID, sectionID int) ([]models.Subject, error) {
 	var subjects []models.Subject
 
 	query := `
-		SELECT id, name, status, periods,course_code
-		FROM subjects
-		WHERE department_id = ? AND semester_id = ?
+		SELECT 
+    s.id AS subject_id,
+    s.name,
+    s.status,
+    s.periods,
+    s.course_code
+FROM 
+    faculty_subjects fs
+JOIN 
+    subjects s ON fs.subject_id = s.id
+WHERE 
+    fs.department_id = ? AND 
+    fs.semester_id = ? AND 
+    fs.academic_year_id = ? AND 
+    fs.section_id = ?;
+
 	`
 
-	rows, err := config.Database.Query(query, departmentID, semesterID)
+	rows, err := config.Database.Query(query, departmentID, semesterID, academicYearID, sectionID)
 	if err != nil {
 		return nil, fmt.Errorf("error querying subjects: %v", err)
 	}

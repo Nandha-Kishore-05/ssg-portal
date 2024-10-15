@@ -24,27 +24,33 @@ func GetAvailableFaculty(c *gin.Context) {
 	c.JSON(http.StatusOK, facultyList)
 }
 
-
 func fetchAvailableFaculty(departmentID, semesterID, day, startTime, endTime string) ([]models.Faculty, error) {
 	var facultyList []models.Faculty
 
 	query := `
-		SELECT DISTINCT f.id, f.name, f.department_id, s.name
-		FROM faculty f
-		JOIN faculty_subjects fs ON f.id = fs.faculty_id
-		JOIN subjects s ON fs.subject_id = s.id
-		WHERE f.department_id = ? AND fs.semester_id = ? AND NOT EXISTS (
-			SELECT 1 FROM timetable t
-			WHERE t.faculty_name = f.name AND t.day_name = ? AND t.start_time <= ? AND t.end_time >= ?
-		)`
+		SELECT DISTINCT f.id, f.name, s.name
+FROM faculty f
+JOIN faculty_subjects fs ON f.id = fs.faculty_id
+JOIN subjects s ON fs.subject_id = s.id
+WHERE fs.semester_id = ? 
+  AND fs.academic_year_id = ? 
+  AND fs.section_id = ? 
+  AND fs.department_id = ?
+  AND NOT EXISTS (
+      SELECT 1 FROM timetable t
+      WHERE t.faculty_name = f.name 
+        AND t.day_name = ? 
+        AND t.start_time <= ? 
+        AND t.end_time >= ?
+  );
 
+		)`
 
 	rows, err := config.Database.Query(query, departmentID, semesterID, day, startTime, endTime)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 
 	for rows.Next() {
 		var faculty models.Faculty

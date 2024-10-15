@@ -40,7 +40,7 @@ func main() {
 	r.GET("/classroomOptions", timetables.VenueOptions)
 	r.GET("/timetable/semoptions", timetables.SemOptions)
 	r.GET("/timetable/sectionoptions", timetables.SectionOptions)
-	r.POST("/upload", timetables.Uploaddetails)
+	r.POST("/upload", timetables.UploadDetails)
 	r.GET("faculty/available/:departmentID/:semesterID/:day/:startTime/:endTime", timetables.GetAvailableFaculty)
 	r.GET("/saved/deptoptions", timetables.SavedDepartmentOptions)
 	r.PUT("/timetable/update", timetables.UpdateTimetable)
