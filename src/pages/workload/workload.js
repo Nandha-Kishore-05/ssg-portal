@@ -381,7 +381,7 @@ const Timetable = (props) => {
     };
 
     fetchSchedule();
-  }, [props.departmentID, props.semesterID]);
+  }, [props.departmentID, props.semesterID,props.academicYearID,props.sectionID]);
 
   const handleSaveTimetable = async (timetableData) => {
     try {

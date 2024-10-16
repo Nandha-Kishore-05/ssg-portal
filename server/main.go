@@ -46,8 +46,8 @@ func main() {
 	r.PUT("/timetable/update", timetables.UpdateTimetable)
 	r.GET("/manual/options", manualentry.DayAndTimeOptions)
 	r.POST("/manual/submit", manualentry.SubmitManualEntry)
+	r.GET("/classroomDetailsOptions", timetables.ClassroomDetailsOptions)
 	r.GET("/acdemicYearOptions", timetables.AcademicYearOptions)
-
 	r.GET("/periodallocation", allocation.Subjectallocation)
 	r.PUT("/periodallocationedit", allocation.UpdateAllocation)
 	r.GET("/getResource", role.GetResources)

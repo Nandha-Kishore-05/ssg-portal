@@ -14,8 +14,8 @@ func GetSubjects(departmentID, semesterID, academicYearID, sectionID int) ([]mod
 		SELECT 
     s.id AS subject_id,
     s.name,
-    s.status,
-    s.periods,
+    fs.status,
+    fs.periods,
     s.course_code
 FROM 
     faculty_subjects fs

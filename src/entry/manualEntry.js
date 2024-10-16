@@ -81,20 +81,8 @@ function ManualEntry() {
         fetchAcademicYears();
     }, []);
 
-    useEffect(() => {
-        const fetchClassroomOptions = async () => {
-            try {
-                const response = await axios.get('http://localhost:8080/classroomOptions');
-                setVenueOptions(response.data);
-            } catch (error) {
-                console.error('Error fetching classroom options:', error);
-            }
-        };
-        fetchClassroomOptions();
-    }, []);
-
-    // Effect to update semesters based on the selected academic year
-    useEffect(() => {
+      // Effect to update semesters based on the selected academic year
+      useEffect(() => {
         if (academicYear) {
             const yearLabel = academicYear.label.toUpperCase();
             const isOdd = /ODD/.test(yearLabel); // Check if it contains 'ODD'
@@ -108,6 +96,21 @@ function ManualEntry() {
             setFilteredSemOptions(semOptions);
         }
     }, [academicYear, semOptions]);
+
+    useEffect(() => {
+        const fetchClassroomOptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/classroomDetailsOptions');
+                setVenueOptions(response.data);
+            } catch (error) {
+                console.error('Error fetching classroom options:', error);
+            }
+        };
+        fetchClassroomOptions();
+    }, []);
+    
+
+  
 
     const handleSubmit = async () => {
         if (semester.length === 0) {
@@ -176,16 +179,6 @@ function ManualEntry() {
                         </div>
                         <div className="form-group">
                             <CustomSelect
-                                label="DEPARTMENT"
-                                placeholder="DEPARTMENT"
-                                value={departments}
-                                onChange={setDepartments}
-                                options={deptOptions}
-                                isMulti={true} // Enable multi-select
-                            />
-                        </div>
-                        <div className="form-group">
-                            <CustomSelect
                                 label="ACADEMIC YEAR"
                                 placeholder="ACADEMIC YEAR"
                                 value={academicYear}
@@ -203,6 +196,17 @@ function ManualEntry() {
                                 isMulti={true}
                             />
                         </div>
+                        <div className="form-group">
+                            <CustomSelect
+                                label="DEPARTMENT"
+                                placeholder="DEPARTMENT"
+                                value={departments}
+                                onChange={setDepartments}
+                                options={deptOptions}
+                                isMulti={true} // Enable multi-select
+                            />
+                        </div>
+                        
                         <div className="form-group">
                             <CustomSelect
                                 label="CLASSROOM"
