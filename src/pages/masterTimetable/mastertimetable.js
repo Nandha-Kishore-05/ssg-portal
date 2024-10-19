@@ -12,7 +12,7 @@ function Mastertimetable() {
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
   const [selectedYear, setSelectedYear] = useState(null);
-  const [selectedSemesterType, setSelectedSemesterType] = useState(''); 
+
   const [cards, setCards] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
 
@@ -32,7 +32,7 @@ function Mastertimetable() {
 
   const handleCloseModal = () => {
     setOpenModal(false);
-    setSelectedSemesterType(''); 
+
   };
 
   const handleYearChange = (event) => {
@@ -40,21 +40,18 @@ function Mastertimetable() {
     setSelectedYear(selected ? selected : null);
   };
 
-  const handleSemesterTypeChange = (event) => {
-    setSelectedSemesterType(event.target.value);
-  };
 
   const handleAddCard = () => {
-    if (selectedYear && selectedSemesterType) {
-      setCards([...cards, { year: selectedYear, semesterType: selectedSemesterType }]);
+    if (selectedYear) {
+      setCards([...cards, { year: selectedYear }]);
       setSelectedYear(null);
-      setSelectedSemesterType(''); 
+    
       handleCloseModal();
     }
   };
 
   const handleDownload = (yearId, type) => {
-    const downloadUrl = `http://localhost:8080/download/${yearId}/${type}`;
+    const downloadUrl = `http://localhost:8080/download/${yearId}`;
     axios.get(downloadUrl, { responseType: 'blob' })
       .then((response) => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -97,8 +94,7 @@ function Mastertimetable() {
             onClose={handleCloseModal}
             selectedYear={selectedYear}
             onYearChange={handleYearChange}
-            selectedSemesterType={selectedSemesterType}
-            onSemesterTypeChange={handleSemesterTypeChange}
+        
             academicYears={academicYears}
             onAddCard={handleAddCard}
             title="Select an Academic Year and Semester"

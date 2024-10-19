@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"ssg-portal/config"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,29 +13,22 @@ import (
 
 func Masterdownload(c *gin.Context) {
 	academicYearID := c.Param("academic_year_id")
-	semesterType := c.Param("type")
 
-	if academicYearID == "" || (semesterType != "odd" && semesterType != "even") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parameters"})
+	if academicYearID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid academic year parameter"})
 		return
 	}
 
-	semesterIDs := []string{"1", "3", "5", "7"}
-	if semesterType == "even" {
-		semesterIDs = []string{"2", "4", "6", "8"}
-	}
-	semesterIDsStr := strings.Join(semesterIDs, ",")
-
-	query := fmt.Sprintf(`
+	// Updated query to fetch all semesters belonging to the given academic_year_id
+	query := `
 		SELECT t.day_name, t.start_time, t.end_time, t.classroom,
        t.subject_name, t.faculty_name, d.name AS department_name, may.academic_year, t.semester_id
 FROM timetable t
 JOIN departments d ON t.department_id = d.id
-JOIN academic_year ay ON t.academic_year = ay.id
-JOIN master_academic_year may ON ay.academic_year = may.id
-WHERE may.id = ? AND t.semester_id IN (%s)
 
-	`, semesterIDsStr)
+JOIN master_academic_year may ON t.academic_year = may.id
+WHERE may.id = ?
+	`
 
 	rows, err := config.Database.Query(query, academicYearID)
 	if err != nil {
@@ -103,7 +95,7 @@ WHERE may.id = ? AND t.semester_id IN (%s)
 
 		f.SetCellValue(sheetName, "A1", "BANNARI AMMAN INSTITUTE OF TECHNOLOGY")
 		log.Println(academicYear)
-		f.SetCellValue(sheetName, "A2", fmt.Sprintf("MASTER TIME TABLE - %s (%s SEMESTER)", academicYear, (semesterType)))
+		f.SetCellValue(sheetName, "A2", fmt.Sprintf("MASTER TIME TABLE - %s", academicYear))
 		f.SetCellValue(sheetName, "A3", fmt.Sprintf("DEPARTMENT OF %s", dept))
 
 		f.MergeCell(sheetName, "A1", "G1")

@@ -1,7 +1,6 @@
 package allocation
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"ssg-portal/config"
@@ -9,24 +8,25 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
 func Subjectallocation(c *gin.Context) {
-    query := `
-    (
+	query := `
+   (
         SELECT 
             DISTINCT 
             subjects.id AS subject_id,
             subjects.name AS subject_name,
             departments.name AS department_name,
             semester.semester_name AS semester_name,
-            subjects.periods,
+            faculty_subjects.periods AS periods,
             CASE 
-                WHEN subjects.status = '0' THEN 'Lab Subject'
-                WHEN subjects.status = '1' THEN 'Non-Lab Subject'
+                WHEN faculty_subjects.status = '0' THEN 'Lab Subject'
+                WHEN faculty_subjects.status = '1' THEN 'Non-Lab Subject'
             END AS STATUS,
             faculty.name AS faculty_name,
-            faculty.id AS faculty_id,  
-            subjects.department_id, 
-            subjects.semester_id
+            faculty.faculty_id AS faculty_id,  
+            faculty_subjects.department_id, 
+            faculty_subjects.semester_id
         FROM 
             subjects
         LEFT JOIN 
@@ -34,15 +34,16 @@ func Subjectallocation(c *gin.Context) {
         LEFT JOIN 
             faculty ON faculty_subjects.faculty_id = faculty.id
         LEFT JOIN 
-            departments ON subjects.department_id = departments.id
+            departments ON faculty_subjects.department_id = departments.id
         LEFT JOIN 
-            semester ON subjects.semester_id = semester.id
+            semester ON faculty_subjects.semester_id = semester.id
+            
         WHERE 
             subjects.name IS NOT NULL
             AND departments.name IS NOT NULL
             AND semester.semester_name IS NOT NULL
-            AND subjects.periods IS NOT NULL
-            AND subjects.status IS NOT NULL
+            AND faculty_subjects.periods IS NOT NULL
+            AND faculty_subjects.status IS NOT NULL
     )
     UNION ALL
     (
@@ -73,52 +74,52 @@ func Subjectallocation(c *gin.Context) {
         department_id, semester_id;
     `
 
-    rows, err := config.Database.Query(query)
-    if err != nil {
-        log.Println("Error executing query: ", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
-        return
-    }
-    defer rows.Close()
+	rows, err := config.Database.Query(query)
+	if err != nil {
+		log.Println("Error executing query: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+	defer rows.Close()
 
-    var subjects []models.SubjectInfo
+	var subjects []models.SubjectInfo
 
-    for rows.Next() {
-        var subject models.SubjectInfo
-        var facultyID sql.NullInt64
+	for rows.Next() {
+		var subject models.SubjectInfo
+		var facultyID string
 
-        err := rows.Scan(
-            &subject.SubjectID,
-            &subject.SubjectName,
-            &subject.DepartmentName,
-            &subject.SemesterName,
-            &subject.Periods,
-            &subject.Status,
-            &subject.FacultyName,
-            &facultyID,           
-            &subject.DepartmentID,
-            &subject.SemesterID,
-        )
-        if err != nil {
-            log.Println("Error scanning row: ", err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Data parsing error"})
-            return
-        }
+		err := rows.Scan(
+			&subject.SubjectID,
+			&subject.SubjectName,
+			&subject.DepartmentName,
+			&subject.SemesterName,
+			&subject.Periods,
+			&subject.Status,
+			&subject.FacultyName,
+			&facultyID,
+			&subject.DepartmentID,
+			&subject.SemesterID,
+		)
+		if err != nil {
+			log.Println("Error scanning row: ", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Data parsing error"})
+			return
+		}
 
-        if facultyID.Valid {
-            subject.FacultyID = int(facultyID.Int64)  
-        } else {
-            subject.FacultyID = 0  
-        }
+		// if string(facultyID) {
+		// 	subject.FacultyID = int(facultyID.Int64)
+		// } else {
+		// 	subject.FacultyID = 0
+		// }
 
-        subjects = append(subjects, subject)
-    }
+		subjects = append(subjects, subject)
+	}
 
-    if err = rows.Err(); err != nil {
-        log.Println("Row iteration error: ", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Data retrieval error"})
-        return
-    }
+	if err = rows.Err(); err != nil {
+		log.Println("Row iteration error: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Data retrieval error"})
+		return
+	}
 
-    c.JSON(http.StatusOK, subjects)
+	c.JSON(http.StatusOK, subjects)
 }

@@ -20,8 +20,7 @@ const AcademicYearModal = ({
   onClose,
   selectedYear,
   onYearChange,
-  selectedSemesterType,
-  onSemesterTypeChange,
+
   academicYears,
   onAddCard,
   title,
@@ -65,25 +64,13 @@ const AcademicYearModal = ({
         </Select>
 
     
-        <Select
-          value={selectedSemesterType}
-          onChange={onSemesterTypeChange}
-          displayEmpty
-          fullWidth
-          sx={{ mb: 4 }}
-        >
-          <MenuItem value="" disabled>
-            Select Semester Type
-          </MenuItem>
-          <MenuItem value="odd">ODD</MenuItem>
-          <MenuItem value="even">EVEN</MenuItem>
-        </Select>
+   
 
         <Button
           variant="contained"
           fullWidth
           onClick={onAddCard}
-          disabled={!selectedYear || !selectedSemesterType}
+   
           sx={{
             padding: '10px 0', 
             backgroundColor: '#1976d2', 
@@ -106,8 +93,7 @@ AcademicYearModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   selectedYear: PropTypes.object,
   onYearChange: PropTypes.func.isRequired,
-  selectedSemesterType: PropTypes.string.isRequired,
-  onSemesterTypeChange: PropTypes.func.isRequired,
+
   academicYears: PropTypes.arrayOf(PropTypes.object).isRequired,
   onAddCard: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,

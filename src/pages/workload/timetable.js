@@ -71,7 +71,7 @@ const SavedTimetable = (props) => {
   const fetchAvailableFaculty = async (day, time) => {
     try {
       const [startTime, endTime] = time.split(' - ');
-      const response = await axios.get(`http://localhost:8080/faculty/available/${props.departmentID}/${props.semesterID}/${day}/${startTime}/${endTime}`);
+      const response = await axios.get(`http://localhost:8080/faculty/available/${props.departmentID}/${props.semesterID}/${day}/${startTime}/${endTime}/${props.academicYearID}/${props.sectionID}`);
       setAvailableFaculty(response.data);
     } catch (error) {
       console.error('Error fetching available faculty:', error);
