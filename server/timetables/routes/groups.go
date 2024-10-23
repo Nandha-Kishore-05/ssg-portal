@@ -89,7 +89,12 @@ func GenerateTimetable(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve classrooms"})
 		return
 	}
-
+	labclassrooms, err := timetables.GetLabVenue()
+	if err != nil {
+		log.Printf("Error getting lab venue: %v")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve lab classrooms"})
+		return
+	}
 	facultySubjects, err := timetables.GetFacultySubjects(semesterID, academicYearID, sectionID)
 	if err != nil {
 		log.Printf("Error getting faculty subjects: %v", err)
@@ -97,7 +102,7 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, section, academicYear, departmentID, semesterID, academicYearID, sectionID)
+	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, section, academicYear, labclassrooms, departmentID, semesterID, academicYearID, sectionID)
 	if timetable == nil {
 		log.Printf("Error generating timetable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to generate timetable"})

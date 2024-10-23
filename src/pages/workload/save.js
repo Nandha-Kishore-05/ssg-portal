@@ -349,12 +349,13 @@ function SaveTimetable() {
   };
 
   if (selectedDepartment && selectedSemester && selectedAcademicyear && selectedSection && isOpen) {
+
     return (
       <AppLayout
         rId={3}
         title="Saved Timetable"
         body={
-          <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} academicYearID={selectedAcademicyear} sectionID={selectedSection}/>
+          <SavedTimetable setIsOpen={setIsOpen} departmentID={selectedDepartment} semesterID={selectedSemester} academicYearID={selectedAcademicyear} sectionID={selectedSection} />
         }
       />
     );
@@ -428,7 +429,7 @@ function SaveTimetable() {
                       <td className="dashboard-table-cell">
                         <VisibilityRounded
                           className="dashboard-view-icon"
-                          onClick={() => handleViewClick(row.department_id, row.semester_id, row.academic_year_id,row.section_id)}
+                          onClick={() => handleViewClick(row.department_id, row.semester_id, row.academic_year_id,row.section_id,row.classroom)}
                         />
                       </td>
                     </tr>

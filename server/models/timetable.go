@@ -20,8 +20,8 @@ type Subject struct {
 	SemesterID   int    `json:"semester_id"`
 	CourseCode   string `json:"course_code"`
 }
-type Section struct{
-	ID int `json:"id"`
+type Section struct {
+	ID          int    `json:"id"`
 	SectionName string `json:"section_name"`
 }
 type Faculty struct {
@@ -37,17 +37,19 @@ type Classroom struct {
 	DepartmentID  int    `json:"department_id"`
 	SemesterID    int    `json:"semester_id"`
 	AcademicYear  int    `json:"academic_year_id"`
-	SectionID int `json:"section_id"`
+	SectionID     int    `json:"section_id"`
+	Status        int    `json:"status"`
 }
 
 type FacultySubject struct {
-	FacultyID   int    `json:"faculty_id"`
-	SubjectID   int    `json:"subject_id"`
-	SemesterID  int    `json:"semester_id"`
-	SubjectName string `json:"subject_name"`
-	SectionID int `json:"section_id"`
-	AcademicYear    int    `json:"academic_year_id"`
-	DepartmentID    int    `json:"department_id"`
+	FacultyID    int    `json:"faculty_id"`
+	SubjectID    int    `json:"subject_id"`
+	SemesterID   int    `json:"semester_id"`
+	SubjectName  string `json:"subject_name"`
+	SectionID    int    `json:"section_id"`
+	AcademicYear int    `json:"academic_year_id"`
+	DepartmentID int    `json:"department_id"`
+	ClassroomID  int    `json:"classroom_id`
 }
 type TimetableEntry struct {
 	ID              int    `json:"id"`
@@ -65,7 +67,7 @@ type TimetableEntry struct {
 	TimetableStatus int    `json:"timetable_status"`
 	AcademicYear    int    `json:"academic_year_id"`
 	CourseCode      string `json:"course_code"`
-    SectionID int `json:"section_id"`
+	SectionID       int    `json:"section_id"`
 }
 type Class struct {
 	Day          string `json:"day_name"`
@@ -222,4 +224,9 @@ type StudentTimetable struct {
 	AcademicYearID int    `json:"academic_year_id"`
 	DepartmentID   int    `json:"department_id"`
 	SemesterID     int    `json:"semester_id"`
+}
+type LabVenue struct {
+	ID        int    `json:"id"`
+	LabVenue  string `json:"lab_name"`
+	SubjectID int    `json:"subject_id"`
 }

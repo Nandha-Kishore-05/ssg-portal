@@ -229,7 +229,7 @@ const SavedTimetable = (props) => {
        <div className="header-k">
        <div className="header-info">
           <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Semester : S{props.semesterID} </h2>
-          <h2 style={{ fontSize: '20px', marginTop: '5px', marginLeft: '15px' }}>Venue: {venue || 'Not Available'}</h2>
+          {/* <h2 style={{ fontSize: '20px', marginTop: '5px', marginLeft: '15px' }}>Venue: {venue || 'Not Available'}</h2> */}
         </div>
         <div className="buttons">
           <CustomButton

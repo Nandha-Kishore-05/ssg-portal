@@ -537,7 +537,7 @@ const Timetable = (props) => {
                         <div key={idx} className="subject">
                           <div>{item.subject_name}</div>
                           <div>{item.faculty_name}</div>
-                      
+                          <div>{item.classroom}</div>
                         </div>
                       ))}
                     </td>
