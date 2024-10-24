@@ -110,25 +110,28 @@ func checkForOverlaps(
 	classroom string,
 	sectionID int,
 ) bool {
-	// Convert start and end time to some comparable format (e.g., int or time.Time)
+
 	start, _ := time.Parse("15:04:05", startTime)
 	end, _ := time.Parse("15:04:05", endTime)
 
 	for timeSlot, entries := range timetable[dayName] {
 		slotTime, _ := time.Parse("15:04:05", timeSlot)
 
-		if slotTime.After(start) && slotTime.Before(end) {
+
+		if slotTime.Before(end) && slotTime.Add(time.Hour).After(start) {
 			for _, entry := range entries {
+			
 				if entry.Classroom == classroom && entry.SectionID != sectionID {
-					return true // Overlap detected with a different section
+					return true 
 				}
 			}
 		}
 	}
-	return false // No overlaps
+	return false
 }
 
-// Enhanced function to assign classrooms based on subject status and section
+
+
 func assignClassroom(
 	subject models.Subject,
 	labClassrooms []models.LabVenue,
@@ -136,17 +139,17 @@ func assignClassroom(
 	existingTimetable map[string]map[string][]models.TimetableEntry,
 	day models.Day,
 	startTime string,
-	endTime string, // Add endTime to check full duration of subject
-	sectionID int, // Added sectionID to differentiate between sections
+	endTime string, 
+	sectionID int, 
 ) (models.Classroom, error) {
 	var selectedClassroom models.Classroom
 
-	if subject.Status == 0 { // Lab subject
+	if subject.Status == 0 { 
 		subjectToLab, err := selectRandomLabClassroom(labClassrooms, []models.Subject{subject})
 		if err != nil || len(subjectToLab) == 0 {
 			return models.Classroom{}, fmt.Errorf("no lab classroom available for subject: %s", subject.Name)
 		}
-		labClassroom := subjectToLab[subject.Name] // Get the assigned lab classroom
+		labClassroom := subjectToLab[subject.Name] 
 		selectedClassroom = models.Classroom{ClassroomName: labClassroom}
 	} else { // Regular subject
 		for _, cls := range classrooms {
@@ -157,18 +160,47 @@ func assignClassroom(
 		}
 	}
 
-	// Ensure that the selected classroom is available and not booked for the same time by another section
-	if !Available(existingTimetable, day.DayName, startTime, selectedClassroom.ClassroomName) {
+
+	if !AvailableLab(existingTimetable, day.DayName, startTime, selectedClassroom.ClassroomName) {
 		return models.Classroom{}, fmt.Errorf("classroom %s not available for section %d", selectedClassroom.ClassroomName, sectionID)
 	}
-
-	// Check for overlapping bookings with the same classroom and different sections across the entire duration
 	if checkForOverlaps(existingTimetable, day.DayName, startTime, endTime, selectedClassroom.ClassroomName, sectionID) {
 		return models.Classroom{}, fmt.Errorf("classroom %s is already booked for another section during this period", selectedClassroom.ClassroomName)
 	}
-
+	
 	return selectedClassroom, nil
 }
+func AvailableLab(
+	timetable map[string]map[string][]models.TimetableEntry, 
+	dayName string, 
+	startTime string, 
+	classroom string,
+) bool {
+
+	start, _ := time.Parse("15:04:05", startTime)
+
+	if dayEntries, exists := timetable[dayName]; exists {
+
+		for timeSlot, entries := range dayEntries {
+
+			slotTime, _ := time.Parse("15:04:05", timeSlot)
+
+	
+			if slotTime.Equal(start) {
+		
+				for _, entry := range entries {
+					if entry.Classroom == classroom {
+			
+						return false
+					}
+				}
+			}
+		}
+	}
+
+	return true
+}
+
 
 func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester, section []models.Section, academicYear []models.AcademicYear, labclassrooms []models.LabVenue, departmentID int, semesterID int, academicYearID int, sectionID int) map[string]map[string][]models.TimetableEntry {
 
