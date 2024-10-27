@@ -124,9 +124,10 @@ type ManualEntryRequest struct {
 	EndTime        string `json:"end_time"`
 	Faculty        string `json:"faculty_name"`
 	Classroom      string `json:"classroom"`
-	Status         string `json:"status"`
+	Status         int    `json:"status"`
 	AcademicYear   int    `json:"academic_year"`
 	CourseCode     string `json:"course_code"`
+	SectionID      int    `json:"section_id"`
 }
 type BulkManualEntryRequest struct {
 	Entries []ManualEntryRequest `json:"entries"`

@@ -16,8 +16,10 @@ function ManualEntry() {
     const [day, setDay] = useState(null);
     const [dayOptions, setDayOptions] = useState([]);
     const [startTime, setStartTime] = useState(null);
+    const [labstartTime, setLabStartTime] = useState(null);
     const [startTimeOptions, setStartTimeOptions] = useState([]);
     const [endTime, setEndTime] = useState(null);
+    const [labendTime, setLabEndTime] = useState(null);
     const [endTimeOptions, setEndTimeOptions] = useState([]);
     const [subject, setSubject] = useState('');
     const [courseCode, setCourseCode] = useState('');
@@ -28,6 +30,9 @@ function ManualEntry() {
     const [venue, setVenue] = useState(null);
     const [venueOptions, setVenueOptions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+    const [selectedOption, setSelectedOption] = useState(null);
+    const [section, setSection] = useState(null);
+    const [sectionOptions, setSectionOptions] = useState([]);
 
     useEffect(() => {
         // Fetching initial options from the backend
@@ -81,6 +86,20 @@ function ManualEntry() {
         fetchAcademicYears();
     }, []);
 
+    useEffect(() => {
+        const fetchSection = async () => {
+          try {
+            const response = await axios.get('http://localhost:8080/timetable/sectionoptions');
+            setSectionOptions(response.data);
+          } catch (error) {
+            console.error('Error fetching section options:', error);
+        
+          }
+        };
+    
+        fetchSection();
+      }, []);
+
       // Effect to update semesters based on the selected academic year
       useEffect(() => {
         if (academicYear) {
@@ -110,45 +129,75 @@ function ManualEntry() {
     }, []);
     
 
-  
-
     const handleSubmit = async () => {
-        if (semester.length === 0) {
-            console.error("No semesters selected");
-            return;
-        }
-
         try {
             for (const sem of semester) {
                 for (const dept of departments) {
-                    const data = {
-                        subject_name: subject,
-                        department_id: dept.value,
+            let data;
+    
+            if (selectedOption.value === 0) { // First option
+                data = [{
+                    subject_name: subject,
+                    department_id: dept.value,
+                    semester_id: sem.value,
+                    day_name: day ? day.value : null,
+                    start_time: startTime ? startTime.value : null,
+                    end_time: endTime ? endTime.value : null,
+                    faculty_name: faculty ? faculty.value : null,
+                    classroom: venue ? venue.value : null,
+                    academic_year: academicYear ? academicYear.value : null,
+                    course_code: courseCode,
+                    status: selectedOption.value,
+                    section_id: section.value,
+                },
+                {
+                    subject_name: subject,
+                    department_id: dept.value,
                         semester_id: sem.value,
-                        day_name: day ? day.value : null,
-                        start_time: startTime ? startTime.value : null,
-                        end_time: endTime ? endTime.value : null,
-                        faculty_name: faculty ? faculty.value : null,
-                        classroom: venue ? venue.value : null,
-                        academic_year: academicYear ? academicYear.value : null,
-                        course_code: courseCode,
-                    };
-
-                    console.log('Data to be sent for department:', dept.value, 'and semester:', sem.value, data);
-
-                    await axios.post('http://localhost:8080/manual/submit', data);
-                    console.log('Form submitted successfully for department', dept.value, 'and semester', sem.value);
-                    setIsModalOpen(true); // Open the modal upon successful submission
-                }
+                    day_name: day ? day.value : null,
+                    faculty_name: faculty ? faculty.value : null,
+                    classroom: venue ? venue.value : null,
+                    academic_year: academicYear ? academicYear.value : null,
+                    course_code: courseCode,
+                    status: selectedOption.value,
+                    section_id: section.value,
+                    start_time: labstartTime ? labstartTime.value : null, 
+                    end_time: labendTime ? labendTime.value : null, 
+                }];
+            } else if (selectedOption.value === 1) { // Second option
+                data = [{
+                    subject_name: subject,
+                    department_id: dept.value,
+                        semester_id: sem.value,
+                    day_name: day ? day.value : null,
+                    start_time: startTime ? startTime.value : null,
+                    end_time: endTime ? endTime.value : null,
+                    faculty_name: faculty ? faculty.value : null,
+                    classroom: venue ? venue.value : null,
+                    academic_year: academicYear ? academicYear.value : null,
+                    course_code: courseCode,
+                    status: selectedOption.value,
+                    section_id: section.value,
+                }];
             }
+    
+            console.log('Data to be sent for ', data);
+    
+            // Sending the data to the backend
+            await axios.post('http://localhost:8080/manual/submit', data);
+            // console.log('Form submitted successfully for department', dept.value, 'and semester', sem.value);
+            setIsModalOpen(true); 
+        }
+    }// Open the modal upon successful submission
         } catch (error) {
             console.error('Error submitting form:', error);
         }
     };
-
+    
     const handleCloseModal = () => {
         setIsModalOpen(false);
     };
+
 
     return (
         <AppLayout
@@ -176,6 +225,19 @@ function ManualEntry() {
                                 value={courseCode}
                                 onChange={setCourseCode}
                             />
+                        </div>
+                        <div className="form-group">
+                        <CustomSelect
+        label="Choose an Option"
+        options={[
+            { label: "Lab subject", value: 0 },
+            { label: "Non-Lab Subject", value: 1 },
+        
+          ]}
+        placeholder="Select an option"
+    
+        onChange={setSelectedOption}
+      />
                         </div>
                         <div className="form-group">
                             <CustomSelect
@@ -206,6 +268,15 @@ function ManualEntry() {
                                 isMulti={true} // Enable multi-select
                             />
                         </div>
+                        <div className="form-group">
+                        <CustomSelect
+                        label="SECTION"
+              placeholder="SECTION"
+              value={section}
+              onChange={setSection}
+              options={sectionOptions}
+            />
+                        </div>
                         
                         <div className="form-group">
                             <CustomSelect
@@ -225,6 +296,24 @@ function ManualEntry() {
                                 options={facultyOptions}
                             />
                         </div>
+                        {selectedOption && selectedOption.value === 0 && (
+        <div className='row'>
+          <CustomSelect
+            label="START TIME"
+            placeholder="START TIME"
+            value={labstartTime}
+            onChange={setLabStartTime}
+            options={startTimeOptions}
+          />
+          <CustomSelect
+            label="END TIME"
+            placeholder="END TIME"
+            value={labendTime}
+            onChange={setLabEndTime}
+            options={endTimeOptions}
+          />
+        </div>
+      )}
                         <div className='row'>
                             <CustomSelect
                                 label="START TIME"
