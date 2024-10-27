@@ -127,24 +127,31 @@ func FetchManualTimetable(departmentID int, semesterID int, academicYearID int, 
 			&entry.Status, &entry.AcademicYear, &entry.CourseCode, &entry.SectionID); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-
-		// Initialize the nested map for the day if it doesn't exist
-		if _, exists := manualTimetable[entry.DayName]; !exists {
-			manualTimetable[entry.DayName] = make(map[string][]models.TimetableEntry)
+		labClassroom := subjectToLab[subject.Name] // Get the assigned lab classroom
+		selectedClassroom = models.Classroom{ClassroomName: labClassroom}
+	} else { // Regular subject
+		for _, cls := range classrooms {
+			if cls.DepartmentID == subject.DepartmentID {
+				selectedClassroom = cls
+				break
+			}
 		}
-
-		// Append the entry to the correct day and start time
-		manualTimetable[entry.DayName][entry.StartTime] = append(manualTimetable[entry.DayName][entry.StartTime], entry)
 	}
 
-	// Check for any errors encountered during iteration
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error during rows iteration: %w", err)
+	// Ensure that the selected classroom is available and not booked for the same time by another section
+	if !Available(existingTimetable, day.DayName, startTime, selectedClassroom.ClassroomName) {
+		return models.Classroom{}, fmt.Errorf("classroom %s not available for section %d", selectedClassroom.ClassroomName, sectionID)
 	}
 
-	return manualTimetable, nil
+	// Check for overlapping bookings with the same classroom and different sections across the entire duration
+	if checkForOverlaps(existingTimetable, day.DayName, startTime, endTime, selectedClassroom.ClassroomName, sectionID) {
+		return models.Classroom{}, fmt.Errorf("classroom %s is already booked for another section during this period", selectedClassroom.ClassroomName)
+	}
+
+	return selectedClassroom, nil
 }
-func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester, section []models.Section, academicYear []models.AcademicYear, departmentID int, semesterID int, academicYearID int, sectionID int) map[string]map[string][]models.TimetableEntry {
+
+func GenerateTimetable(days []models.Day, hours []models.Hour, subjects []models.Subject, faculty []models.Faculty, classrooms []models.Classroom, facultySubjects []models.FacultySubject, semesters []models.Semester, section []models.Section, academicYear []models.AcademicYear, labclassrooms []models.LabVenue, departmentID int, semesterID int, academicYearID int, sectionID int) map[string]map[string][]models.TimetableEntry {
 
 	// Fetch the existing timetable
 	existingTimetable, err := FetchExistingTimetable()
