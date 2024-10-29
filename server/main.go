@@ -6,6 +6,7 @@ import (
 	"ssg-portal/timetables/allocation"
 	"ssg-portal/timetables/auth"
 	"ssg-portal/timetables/excel"
+	"ssg-portal/timetables/labentry"
 	"ssg-portal/timetables/manualentry"
 	"ssg-portal/timetables/otp"
 	"ssg-portal/timetables/role"
@@ -60,5 +61,6 @@ func main() {
 	r.GET("/studentTimetable/:studentID", studententry.StudentTimetable)
 	r.GET("/download/:academic_year_id", excel.Masterdownload)
 	r.GET("/studentoptions", studententry.GetStudentOptions)
+	r.POST("/labentry", labentry.LabEntry)
 	r.Run(":8080")
 }

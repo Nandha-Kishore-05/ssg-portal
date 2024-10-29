@@ -15,6 +15,7 @@ import Venue from "../pages/workload/venue/table";
 import StudentEntry from "../pages/student/studentEntry";
 import StudentTable from "../pages/student/studentTable";
 import StudentTimetable from "../pages/student/studentTimetable";
+import LabEntry from "../pages/labentry/labentry";
 
 
 
@@ -84,6 +85,10 @@ const routes = [
   {
     path: "/studentTable",
     element: <StudentTable />,
+  },
+  {
+    path: "/labentry",
+    element: <LabEntry />,
   },
   {
     path: "/logout",

@@ -1,5 +1,8 @@
 package models
 
+
+
+
 type Day struct {
 	ID      int    `json:"id"`
 	DayName string `json:"day_name"`
@@ -181,11 +184,12 @@ type AcademicYear struct {
 }
 type VenueTimetable struct {
 	DayName     string `json:"day_name"`
-	StartTime   string `json:"start_time"`
-	EndTime     string `json:"end_time"`
+	StartTime   string `json:"start_time"`   // Scanning start_time as string
+    EndTime     string `json:"end_time"`   
 	SubjectName string `json:"subject_name"`
 	FacultyName string `json:"faculty_name"`
 	SemesterID  int    `json:"semester_id"`
+	Department string `json:"department_name"`
 }
 type Student struct {
 	StudentName string `json:"Student Name"`

@@ -74,6 +74,8 @@ function SideBar(props) {
             return  <SchoolIcon  />
         case 'Student Timetable':
               return  <PersonIcon  />
+              case 'Lab Entry':
+                return <EditIcon />;
       default:
         return null; // Return null if no matching icon
     }
