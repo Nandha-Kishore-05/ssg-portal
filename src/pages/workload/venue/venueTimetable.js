@@ -113,8 +113,11 @@ const VenueTimetable = (props) => {
                       classes.map((item, idx) => (
                         <div key={idx}>
                           <div>{item.subject_name}</div>
+                          <div>{item.faculty_name}</div>
                           <div>{item.department_name}</div>
-                          <div>S{item.semester_id}</div>
+                        
+                          <div>{item.section_name}</div>
+                          <div>S{item.semester_id}</div><br />
                         </div>
                       ))
                     ) : (

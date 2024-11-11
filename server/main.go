@@ -61,6 +61,8 @@ func main() {
 	r.GET("/studentTimetable/:studentID", studententry.StudentTimetable)
 	r.GET("/download/:academic_year_id", excel.Masterdownload)
 	r.GET("/studentoptions", studententry.GetStudentOptions)
+	r.GET("/subjectoptions", timetables.SubjectOptions)
+	r.GET("/course-code", timetables.CourseCodeOptions)
 	r.POST("/labentry", labentry.LabEntry)
 	r.Run(":8080")
 }

@@ -9,6 +9,7 @@ import { Modal, Box, Typography } from '@mui/material'; // Import Modal componen
 
 function ManualEntry() {
     const [departments, setDepartments] = useState([]);
+ 
     const [deptOptions, setDeptOptions] = useState([]);
     const [semester, setSemester] = useState([]);
     const [semOptions, setSemOptions] = useState([]);
@@ -22,7 +23,9 @@ function ManualEntry() {
     const [labendTime, setLabEndTime] = useState(null);
     const [endTimeOptions, setEndTimeOptions] = useState([]);
     const [subject, setSubject] = useState('');
+    const [subjectOptions, setSubjectOptions] = useState([]);
     const [courseCode, setCourseCode] = useState('');
+    const [courseCodeOptions, setCourseCodeOptions] = useState([]);
     const [faculty, setFaculty] = useState(null);
     const [facultyOptions, setFacultyOptions] = useState([]);
     const [academicYear, setAcademicYear] = useState(null);
@@ -33,6 +36,35 @@ function ManualEntry() {
     const [selectedOption, setSelectedOption] = useState(null);
     const [section, setSection] = useState(null);
     const [sectionOptions, setSectionOptions] = useState([]);
+
+    useEffect(() => {
+        const fetchSubjectptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/subjectoptions');
+                setSubjectOptions(response.data);
+            } catch (error) {
+                console.error('Error fetching subject  options:', error);
+            }
+        };
+        fetchSubjectptions();
+    }, []);
+
+    useEffect(() => {
+        const fetchCourseCodeOptions = async () => {
+            if (!subject) return; // Only fetch if a subject is selected
+            try {
+                const response = await axios.get('http://localhost:8080/course-code', {
+              
+                    params: { subject_name: subject.value }, // Passing selected subject name as a query param
+                });
+                setCourseCodeOptions(response.data); // Wrap response in array to match CustomSelect options format
+            } catch (error) {
+                console.error('Error fetching course code options:', error);
+            }
+        };
+        fetchCourseCodeOptions();
+    }, [subject]);
+
 
     useEffect(() => {
         // Fetching initial options from the backend
@@ -137,7 +169,7 @@ function ManualEntry() {
     
             if (selectedOption.value === 0) { // First option
                 data = [{
-                    subject_name: subject,
+                    subject_name: subject.value,
                     department_id: dept.value,
                     semester_id: sem.value,
                     day_name: day ? day.value : null,
@@ -146,19 +178,19 @@ function ManualEntry() {
                     faculty_name: faculty ? faculty.value : null,
                     classroom: venue ? venue.value : null,
                     academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode,
+                    course_code: courseCode.value,
                     status: selectedOption.value,
                     section_id: section.value,
                 },
                 {
-                    subject_name: subject,
+                    subject_name: subject.value,
                     department_id: dept.value,
                         semester_id: sem.value,
                     day_name: day ? day.value : null,
                     faculty_name: faculty ? faculty.value : null,
                     classroom: venue ? venue.value : null,
                     academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode,
+                    course_code: courseCode.value,
                     status: selectedOption.value,
                     section_id: section.value,
                     start_time: labstartTime ? labstartTime.value : null, 
@@ -166,7 +198,7 @@ function ManualEntry() {
                 }];
             } else if (selectedOption.value === 1) { // Second option
                 data = [{
-                    subject_name: subject,
+                    subject_name: subject.value,
                     department_id: dept.value,
                         semester_id: sem.value,
                     day_name: day ? day.value : null,
@@ -175,7 +207,7 @@ function ManualEntry() {
                     faculty_name: faculty ? faculty.value : null,
                     classroom: venue ? venue.value : null,
                     academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode,
+                    course_code: courseCode.value,
                     status: selectedOption.value,
                     section_id: section.value,
                 }];
@@ -211,19 +243,24 @@ function ManualEntry() {
                         </center>
                         <br />
                         <div className="form-group">
-                            <InputBox
+                        <CustomSelect
                                 label="SUBJECT NAME"
                                 placeholder="SUBJECT NAME"
                                 value={subject}
                                 onChange={setSubject}
+                                options={subjectOptions}
+                               
                             />
                         </div>
+                       
                         <div className="form-group">
-                            <InputBox
+                        <CustomSelect
                                 label="COURSE CODE"
                                 placeholder="COURSE CODE"
                                 value={courseCode}
-                                onChange={setCourseCode}
+                                 onChange={setCourseCode}
+                                options={courseCodeOptions}
+                               
                             />
                         </div>
                         <div className="form-group">

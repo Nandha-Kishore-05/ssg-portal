@@ -190,6 +190,8 @@ type VenueTimetable struct {
 	FacultyName string `json:"faculty_name"`
 	SemesterID  int    `json:"semester_id"`
 	Department string `json:"department_name"`
+    SectionName string `json:"section_name"`
+	
 }
 type Student struct {
 	StudentName string `json:"Student Name"`

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+
 	"ssg-portal/config"
 
 	"github.com/gin-gonic/gin"
@@ -21,31 +22,20 @@ func DownloadTimetable(c *gin.Context) {
 		return
 	}
 
-	var academicYear, semesterName string
-	yearQuery := `SELECT may.academic_year, s.semester_name
-FROM academic_year ay
-JOIN semester s ON ay.semester_id = s.id
-JOIN master_academic_year may ON ay.academic_year = may.id
-WHERE ay.semester_id = ?
-`
-	err = config.Database.QueryRow(yearQuery, semesterID).Scan(&academicYear, &semesterName)
+	var academicYear string
+	yearQuery := `SELECT may.academic_year
+	FROM academic_year ay
+	JOIN master_academic_year may ON ay.academic_year = may.id
+	WHERE ay.semester_id = ?`
+	err = config.Database.QueryRow(yearQuery, semesterID).Scan(&academicYear)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var semesterType string
-	if semesterID%2 == 0 {
-		semesterType = "Even"
-	} else {
-		semesterType = "Odd"
-	}
-
-	query := `
-        SELECT day_name, start_time, end_time, classroom, semester_id, department_id, subject_name, faculty_name
-        FROM timetable
-        WHERE semester_id = ?
-        ORDER BY department_id, semester_id
-    `
+	query := `SELECT day_name, start_time, end_time, classroom, semester_id, department_id, section_id, subject_name, faculty_name
+		FROM timetable
+		WHERE semester_id = ?
+		ORDER BY section_id`
 	rows, err := config.Database.Query(query, semesterID)
 	if err != nil {
 		log.Fatal(err)
@@ -53,7 +43,6 @@ WHERE ay.semester_id = ?
 	defer rows.Close()
 
 	file := excelize.NewFile()
-
 	days := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 	timeSlots := []string{
 		"08:45:00 - 09:35:00",
@@ -75,13 +64,17 @@ WHERE ay.semester_id = ?
 	timetableData := make(map[string][][]string)
 
 	for rows.Next() {
-		var day, startTime, endTime, classroom, subject, faculty string
+		var day, startTime, endTime, classroom, section, subject, faculty string
 		var semesterID, departmentID int
-		if err := rows.Scan(&day, &startTime, &endTime, &classroom, &semesterID, &departmentID, &subject, &faculty); err != nil {
+		if err := rows.Scan(&day, &startTime, &endTime, &classroom, &semesterID, &departmentID, &section, &subject, &faculty); err != nil {
 			log.Fatal(err)
 		}
 
-		key := fmt.Sprintf("Department %d - Semester %d", departmentID, semesterID)
+		// Create a key for timetable data, truncating the section if necessary.
+		key := fmt.Sprintf("D%d-S%d", departmentID, semesterID)
+		if section != "" {
+			key += fmt.Sprintf("-Sec%s", section)
+		}
 
 		if _, exists := timetableData[key]; !exists {
 			timetableData[key] = make([][]string, len(days))
@@ -117,7 +110,12 @@ WHERE ay.semester_id = ?
 	}
 
 	for key, data := range timetableData {
+		// Truncate the sheet name to ensure it doesn't exceed 31 characters.
 		sheetName := key
+		if len(sheetName) > 31 {
+			sheetName = sheetName[:31]
+		}
+
 		index, err := file.NewSheet(sheetName)
 		if err != nil {
 			log.Fatal(err)
@@ -159,7 +157,7 @@ WHERE ay.semester_id = ?
 
 	file.DeleteSheet("Sheet1")
 
-	filename := fmt.Sprintf("%s-Semester-%d-(%s sem).xlsx", academicYear, semesterID, semesterType)
+	filename := fmt.Sprintf("%s-Semester-%d.xlsx", academicYear, semesterID)
 
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
