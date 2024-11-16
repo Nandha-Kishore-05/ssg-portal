@@ -37,17 +37,47 @@ function ManualEntry() {
     const [section, setSection] = useState(null);
     const [sectionOptions, setSectionOptions] = useState([]);
 
+  
+
     useEffect(() => {
-        const fetchSubjectptions = async () => {
+        const fetchSubjectOptions = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/subjectoptions');
-                setSubjectOptions(response.data);
+                // Loop through each semester and department only if they are available
+                if (academicYear && semester && departments && section) {
+                    for (const sem of semester) {
+                        for (const dept of departments) {
+                            // Construct the subject data object
+                            const subjectData = {
+                                department_id: dept.value,
+                                semester_id: sem.value,
+                                academic_year_id: academicYear ? academicYear.value : null,
+                                section_id: section.value,
+                            };
+    
+                            console.log(subjectData); // Log the data being sent
+    
+                            // Make the POST request with the constructed data object
+                            const response = await axios.post('http://localhost:8080/subjectoptions', subjectData);
+                            setSubjectOptions(response.data); // Assuming response contains the list of subject options
+                        }
+                    }
+                } else {
+                    console.error('Missing one or more required values.');
+                }
             } catch (error) {
-                console.error('Error fetching subject  options:', error);
+                console.error('Error fetching subject options:', error);
             }
         };
-        fetchSubjectptions();
-    }, []);
+    
+        // Fetch subject options only if all required values are set
+        if (academicYear && semester && departments && section) {
+            fetchSubjectOptions();
+        }
+    }, [academicYear, semester, departments, section]);
+     // Added selectedOption as dependency
+    
+
+    
 
     useEffect(() => {
         const fetchCourseCodeOptions = async () => {
@@ -55,9 +85,10 @@ function ManualEntry() {
             try {
                 const response = await axios.get('http://localhost:8080/course-code', {
               
-                    params: { subject_name: subject.value }, // Passing selected subject name as a query param
+                    params: { subject_name: subject.label }, // Passing selected subject name as a query param
                 });
-                setCourseCodeOptions(response.data); // Wrap response in array to match CustomSelect options format
+                setCourseCodeOptions(Array.isArray(response.data) ? response.data : []);
+                // Wrap response in array to match CustomSelect options format
             } catch (error) {
                 console.error('Error fetching course code options:', error);
             }
@@ -243,39 +274,6 @@ function ManualEntry() {
                         </center>
                         <br />
                         <div className="form-group">
-                        <CustomSelect
-                                label="SUBJECT NAME"
-                                placeholder="SUBJECT NAME"
-                                value={subject}
-                                onChange={setSubject}
-                                options={subjectOptions}
-                               
-                            />
-                        </div>
-                       
-                        <div className="form-group">
-                        <CustomSelect
-                                label="COURSE CODE"
-                                placeholder="COURSE CODE"
-                                value={courseCode}
-                                 onChange={setCourseCode}
-                                options={courseCodeOptions}
-                               
-                            />
-                        </div>
-                        <div className="form-group">
-                        <CustomSelect
-        label="Choose an Option"
-        options={[
-            { label: "Lab subject", value: 0 },
-            { label: "Non-Lab Subject", value: 1 },
-        
-          ]}
-        placeholder="Select an option"
-    
-        onChange={setSelectedOption}
-      />
-                        </div>
                         <div className="form-group">
                             <CustomSelect
                                 label="ACADEMIC YEAR"
@@ -314,6 +312,40 @@ function ManualEntry() {
               options={sectionOptions}
             />
                         </div>
+                        <CustomSelect
+                                label="SUBJECT NAME"
+                                placeholder="SUBJECT NAME"
+                                value={subject}
+                                onChange={setSubject}
+                                options={subjectOptions}
+                               
+                            />
+                        </div>
+                       
+                        <div className="form-group">
+                        <CustomSelect
+                                label="COURSE CODE"
+                                placeholder="COURSE CODE"
+                                value={courseCode}
+                                 onChange={setCourseCode}
+                                options={courseCodeOptions}
+                               
+                            />
+                        </div>
+                        <div className="form-group">
+                        <CustomSelect
+        label="Choose an Option"
+        options={[
+            { label: "Lab subject", value: 0 },
+            { label: "Non-Lab Subject", value: 1 },
+        
+          ]}
+        placeholder="Select an option"
+    
+        onChange={setSelectedOption}
+      />
+                        </div>
+                      
                         
                         <div className="form-group">
                             <CustomSelect

@@ -43,6 +43,7 @@ func main() {
 	r.GET("/timetable/sectionoptions", timetables.SectionOptions)
 	r.POST("/upload", timetables.UploadDetails)
 	r.GET("faculty/available/:departmentID/:semesterID/:day/:startTime/:endTime/:academicYearID/:sectionID", timetables.GetAvailableFaculty)
+    r.GET("/available-timings/:facultyName/:day", timetables.GetAvailableTimingsForFaculty)
 	r.GET("/saved/deptoptions", timetables.SavedDepartmentOptions)
 	r.PUT("/timetable/update", timetables.UpdateTimetable)
 	r.GET("/manual/options", manualentry.DayAndTimeOptions)
@@ -61,7 +62,8 @@ func main() {
 	r.GET("/studentTimetable/:studentID", studententry.StudentTimetable)
 	r.GET("/download/:academic_year_id", excel.Masterdownload)
 	r.GET("/studentoptions", studententry.GetStudentOptions)
-	r.GET("/subjectoptions", timetables.SubjectOptions)
+	r.POST("/subjectoptions", timetables.SubjectOptions)
+
 	r.GET("/course-code", timetables.CourseCodeOptions)
 	r.POST("/labentry", labentry.LabEntry)
 	r.Run(":8080")

@@ -27,6 +27,9 @@ const SavedTimetable = (props) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [availableFaculty, setAvailableFaculty] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [facultyName, setFacultyName] = useState('');
+  const [day, setDay] = useState('');
+  const [availableTimings, setAvailableTimings] = useState([]);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -78,17 +81,32 @@ const SavedTimetable = (props) => {
     }
   };
 
-  const handleOpenDrawer = (day, time) => {
+  const fetchAvailableTimings = async (day,faculty) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/available-timings/${faculty}/${day}`);
+      setAvailableTimings(response.data);
+      console.log(response.data)
+    } catch (error) {
+      console.error('Error fetching available timings:', error);
+      toast.error('Failed to fetch available timings');
+    }
+  };
+
+  const handleOpenDrawer = (day, time,faculty) => {
     if (!isEditMode) return;
     setSelectedPeriod({ day, time });
     setDrawerOpen(true);
     fetchAvailableFaculty(day, time);
+    fetchAvailableTimings(day,faculty)
+    console.log("Selected faculty:", faculty);
+
   };
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
     setSelectedPeriod(null);
     setAvailableFaculty([]);
+    setAvailableTimings([]);
   };
 
   const handleConfirmAssignFaculty = async (faculty) => {
@@ -229,7 +247,7 @@ const SavedTimetable = (props) => {
        <div className="header-k">
        <div className="header-info">
           <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Semester : S{props.semesterID} </h2>
-          {/* <h2 style={{ fontSize: '20px', marginTop: '5px', marginLeft: '15px' }}>Venue: {venue || 'Not Available'}</h2> */}
+        
         </div>
         <div className="buttons">
           <CustomButton
@@ -257,45 +275,72 @@ const SavedTimetable = (props) => {
           </tr>
         </thead>
         <tbody>
-          {days.map((day) => (
-            <tr key={day}>
-              <td className="day" >{day}</td>
-              {times.map((time, index) => {
-                const classes = schedule.filter(item =>
-                  item.day_name === day && `${item.start_time} - ${item.end_time}` === time
-                );
-                const isActive = selectedPeriod?.day === day && selectedPeriod?.time === time;
-                return (
-                  <td
-                    key={index}
-                    style={{
-                      border: '2px solid #ddd',
-                      padding: '7px',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      textAlign: 'center',
-                      cursor: isEditMode ? 'pointer' : 'default',
-                      backgroundColor: isActive ? '#dff0d8' : '#fff'
-                    }}
-                    onClick={() => handleOpenDrawer(day, time)}
-                  >
-                    {classes.length > 0 ? (
-                      classes.map((item, idx) => (
-                        <div key={idx}>
-                          <div>{item.subject_name}</div>
-                          <div>{item.faculty_name}</div>
-                          {/* <div>{item.classroom}</div> */}
-                        </div>
-                      ))
-                    ) : (
-                      <div>No classes</div>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
+  {days.map((day) => (
+    <tr key={day}>
+      <td className="day">{day}</td>
+      {times.map((time, index) => {
+        const classes = schedule.filter(
+          (item) => item.day_name === day && `${item.start_time} - ${item.end_time}` === time
+        );
+        const isActive = selectedPeriod?.day === day && selectedPeriod?.time === time;
+        const faculty = classes.length > 0 ? classes.map((item) => item.faculty_name) : null;
+
+        // Match available timings
+        const isAvailableTiming = availableTimings.some(
+          (timing) =>
+            timing.day_name === day &&
+            timing.start_time === time.split(' - ')[0] &&
+            timing.end_time === time.split(' - ')[1]
+        );
+
+        console.log({
+          day,
+          time,
+          startTime: time.split(' - ')[0],
+          endTime: time.split(' - ')[1],
+          isAvailableTiming,
+        });
+
+        const cellStyle = {
+          border: '2px solid #ddd',
+          padding: '7px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          cursor: isEditMode ? 'pointer' : 'default',
+          backgroundColor: isAvailableTiming
+            ? '#dff0d8' // Light green if timing is available
+            : isActive
+            ? '#f0e68c' // Light yellow if active
+            : '#fff', // Default white background
+        };
+
+        return (
+          <td
+            key={index}
+            style={cellStyle}
+            onClick={() => handleOpenDrawer(day, time, faculty)}
+          >
+            {classes.length > 0 ? (
+              classes.map((item, idx) => (
+                <div key={idx}>
+                  <div>{item.subject_name}</div>
+                  <div>{item.faculty_name}</div>
+                  {/* <div>{item.classroom}</div> */}
+                </div>
+              ))
+            ) : (
+              <div>No classes</div>
+            )}
+          </td>
+        );
+      })}
+    </tr>
+  ))}
+</tbody>
+
+
+
       </table>
       <Drawer
   anchor="left"

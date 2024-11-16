@@ -6,7 +6,7 @@ import (
     "ssg-portal/config"
 )
 
-// TimetableOptions returns the list of department options
+
 func TimetableOptions(c *gin.Context) {
     rows, err := config.Database.Query("SELECT id, name FROM departments")
     if err != nil {

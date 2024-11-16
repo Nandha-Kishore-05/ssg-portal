@@ -212,35 +212,6 @@ function LabEntry() {
                         </center>
                         <br />
                         <div className="form-group">
-                            <InputBox
-                                label="SUBJECT NAME"
-                                placeholder="SUBJECT NAME"
-                                value={subject}
-                                onChange={setSubject}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <InputBox
-                                label="COURSE CODE"
-                                placeholder="COURSE CODE"
-                                value={courseCode}
-                                onChange={setCourseCode}
-                            />
-                        </div>
-                        <div className="form-group">
-                        <CustomSelect
-        label="Choose an Option"
-        options={[
-            { label: "Lab subject", value: 0 },
-            { label: "Non-Lab Subject", value: 1 },
-        
-          ]}
-        placeholder="Select an option"
-    
-        onChange={setSelectedOption}
-      />
-                        </div>
-                        <div className="form-group">
                             <CustomSelect
                                 label="ACADEMIC YEAR"
                                 placeholder="ACADEMIC YEAR"
@@ -278,6 +249,36 @@ function LabEntry() {
               options={sectionOptions}
             />
                         </div>
+                        <div className="form-group">
+                            <InputBox
+                                label="SUBJECT NAME"
+                                placeholder="SUBJECT NAME"
+                                value={subject}
+                                onChange={setSubject}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <InputBox
+                                label="COURSE CODE"
+                                placeholder="COURSE CODE"
+                                value={courseCode}
+                                onChange={setCourseCode}
+                            />
+                        </div>
+                        <div className="form-group">
+                        <CustomSelect
+        label="Choose an Option"
+        options={[
+            { label: "Lab subject", value: 0 },
+            { label: "Non-Lab Subject", value: 1 },
+        
+          ]}
+        placeholder="Select an option"
+    
+        onChange={setSelectedOption}
+      />
+                        </div>
+                      
                         
                         <div className="form-group">
                             <CustomSelect

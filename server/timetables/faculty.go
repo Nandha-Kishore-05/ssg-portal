@@ -7,9 +7,26 @@ import (
 	"ssg-portal/models"
 )
 
-func GetFaculty() ([]models.Faculty, error) {
+func GetFaculty(departmentID, semesterID, academicYearID, sectionID int) ([]models.Faculty, error) {
 	var faculty []models.Faculty
-	rows, err := config.Database.Query("SELECT id, name FROM faculty")
+
+	rows, err := config.Database.Query(
+		`
+		SELECT 
+			f.id,
+			f.name
+		FROM 
+			faculty_subjects fs
+		JOIN 
+			faculty f ON fs.faculty_id = f.id
+		WHERE 
+			fs.department_id = ? AND 
+			fs.semester_id = ? AND 
+			fs.academic_year_id = ? AND 
+			fs.section_id = ?`,
+		departmentID, semesterID, academicYearID, sectionID,
+	)
+
 	if err != nil {
 		return nil, fmt.Errorf("error querying faculty: %v", err)
 	}

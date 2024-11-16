@@ -76,7 +76,7 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-	faculty, err := timetables.GetFaculty()
+	faculty, err := timetables.GetFaculty(departmentID, semesterID, academicYearID, sectionID)
 	if err != nil {
 		log.Printf("Error getting faculty: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve faculty"})
