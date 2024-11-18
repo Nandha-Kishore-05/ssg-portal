@@ -11,68 +11,6 @@ import (
 
 type FacultyBasedTimetable map[string]map[string][]models.TimetableEntry
 
-func PeriodsAvailable(departmentID, academicYearID, semesterID, sectionID int) error {
-    var totalPeriods int
-
-    // Query to fetch total periods from faculty_subjects
-    queryFacultySubjects := `
-        SELECT SUM(fs.periods) 
-        FROM faculty_subjects fs
-        WHERE fs.department_id = ? 
-        AND fs.academic_year_id = ? 
-        AND fs.semester_id = ? 
-        AND fs.section_id = ?`
-
-    var facultySubjectsPeriods int
-    err := config.Database.QueryRow(queryFacultySubjects, departmentID, academicYearID, semesterID, sectionID).Scan(&facultySubjectsPeriods)
-    if err != nil {
-        return fmt.Errorf("error fetching periods from faculty_subjects: %v", err)
-    }
-
-    // Query to fetch total periods from manual_timetable
-    queryManualTimetable := `
-        SELECT COUNT(*) 
-        FROM manual_timetable mt
-        WHERE mt.department_id = ? 
-        AND mt.academic_year = ? 
-        AND mt.semester_id = ? 
-        AND mt.section_id = ?`
-
-    var manualTimetablePeriods int
-    err = config.Database.QueryRow(queryManualTimetable, departmentID, academicYearID, semesterID, sectionID).Scan(&manualTimetablePeriods)
-    if err != nil {
-        return fmt.Errorf("error fetching periods from manual_timetable: %v", err)
-    }
-
-    // Query to fetch total periods from timetable_skips
-    queryTimetableSkips := `
-        SELECT COUNT(*) 
-        FROM timetable_skips ts
-        WHERE ts.department_id = ? 
-        AND ts.academic_year = ? 
-        AND ts.semester_id = ? 
-        AND ts.section_id = ?`
-
-    var timetableSkipsPeriods int
-    err = config.Database.QueryRow(queryTimetableSkips, departmentID, academicYearID, semesterID, sectionID).Scan(&timetableSkipsPeriods)
-    if err != nil {
-        return fmt.Errorf("error fetching periods from timetable_skips: %v", err)
-    }
-
-    // Calculate the total periods
-    totalPeriods = facultySubjectsPeriods + manualTimetablePeriods + timetableSkipsPeriods
-
-    // Validate the total periods
-    if totalPeriods < 36 {
-        return fmt.Errorf("only %d periods available, 36 periods are required", totalPeriods)
-    } else if totalPeriods > 36 {
-        return fmt.Errorf("exceeded allowed periods: %d periods found (only 36 allowed)", totalPeriods)
-    }
-
-    return nil
-}
-
-
 func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, error) {
 	existingTimetable := make(map[string]map[string][]models.TimetableEntry)
 
@@ -205,7 +143,6 @@ func FetchManualTimetable(departmentID int, semesterID int, academicYearID int, 
 
 	return manualTimetable, nil
 }
-
 
 func IsPeriodAvailable(existingTimetable map[string]map[string][]models.TimetableEntry, dayName, startTime, facultyName string) bool {
 	if _, ok := existingTimetable[facultyName]; ok {
@@ -367,33 +304,29 @@ func GenerateTimetable(
 			for _, hour := range hours {
 				startTime := hour.StartTime
 
-		
 				if len(timetable[day.DayName][startTime]) > 0 {
 					continue
 				}
 
-				
 				assigned := false
 				for attempts := 0; attempts < 1000; attempts++ {
-				
+
 					var filteredSubjects []models.Subject
 					for _, subject := range subjects {
 						if periodsLeft[subject.Name] > 0 && !subjectsAssigned[day.DayName][subject.Name] {
 							if subject.Status == 0 && labAssigned[day.DayName] {
-								continue 
+								continue
 							}
 							filteredSubjects = append(filteredSubjects, subject)
 						}
 					}
 
-		
 					if len(filteredSubjects) == 0 {
 						break
 					}
 
 					subject := filteredSubjects[rand.Intn(len(filteredSubjects))]
 
-		
 					var availableFaculty []models.Faculty
 					for _, fac := range faculty {
 						if facultySubjectMap[fac.ID][subject.ID] && facultyDailyCount[day.DayName][fac.FacultyName] < 2 {
@@ -472,7 +405,6 @@ func GenerateTimetable(
 	}
 }
 
-
 func generateRandomTimetable(
 	days []models.Day,
 	hours []models.Hour,
@@ -490,12 +422,6 @@ func generateRandomTimetable(
 	// Add db as a parameter for fetching manual timetable
 ) FacultyBasedTimetable {
 	log.Println("Academic Year ID:", academicYearID)
-
-	err := PeriodsAvailable(departmentID, academicYearID, semesterID, sectionID)
-    if err != nil {
-        log.Println("Validation failed:", err)
-        return nil
-    }
 
 	skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
 	if err != nil {
