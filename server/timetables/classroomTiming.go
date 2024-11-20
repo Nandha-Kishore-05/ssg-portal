@@ -11,8 +11,9 @@ func GetAvailableTimingsForFacultyAndClassroom(c *gin.Context) {
 	facultyName := c.Param("facultyName")
 	day := c.Param("day")
 	classroomName := c.Param("classroomName")
+	academicYearID := c.Param("academicYearID") // Retrieve academic year ID from parameters
 
-	availableTimings, err := FacultyAndClassroomAvailableTimings(facultyName, day, classroomName)
+	availableTimings, err := FacultyAndClassroomAvailableTimings(facultyName, day, classroomName, academicYearID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -21,7 +22,7 @@ func GetAvailableTimingsForFacultyAndClassroom(c *gin.Context) {
 	c.JSON(http.StatusOK, availableTimings)
 }
 
-func FacultyAndClassroomAvailableTimings(facultyName, day, classroomName string) ([]map[string]string, error) {
+func FacultyAndClassroomAvailableTimings(facultyName, day, classroomName, academicYearID string) ([]map[string]string, error) {
 	var availableTimings []map[string]string
 
 	query := `
@@ -31,27 +32,59 @@ func FacultyAndClassroomAvailableTimings(facultyName, day, classroomName string)
 		FROM hours AS t1
 		WHERE NOT EXISTS (
 			SELECT 1
-			FROM timetable AS t2
-			WHERE t2.faculty_name = ?
-			  AND t2.day_name = ?
+			FROM (
+				SELECT faculty_name, day_name, start_time, end_time 
+				FROM timetable
+				WHERE academic_year = ?
+				UNION ALL
+				SELECT faculty_name, day_name, start_time, end_time 
+				FROM manual_timetable
+				WHERE academic_year = ?
+				UNION ALL
+				SELECT faculty_name, day_name, start_time, end_time 
+				FROM timetable_skips
+				WHERE academic_year = ?
+			) AS combined_faculty
+			WHERE combined_faculty.faculty_name = ?
+			  AND combined_faculty.day_name = ?
 			  AND (
-					(t1.start_time < t2.end_time AND t1.end_time > t2.start_time)
+				  t1.start_time < combined_faculty.end_time
+				  AND t1.end_time > combined_faculty.start_time
 			  )
 		)
 		AND NOT EXISTS (
 			SELECT 1
-			FROM timetable AS t3
-			WHERE t3.classroom_name = ?
-			  AND t3.day_name = ?
+			FROM (
+				SELECT classroom AS classroom, day_name, start_time, end_time 
+				FROM timetable
+				WHERE academic_year = ?
+				UNION ALL
+				SELECT classroom AS classroom, day_name, start_time, end_time 
+				FROM manual_timetable
+				WHERE academic_year = ?
+				UNION ALL
+				SELECT classroom AS classroom, day_name, start_time, end_time 
+				FROM timetable_skips
+				WHERE academic_year = ?
+			) AS combined_classroom
+			WHERE combined_classroom.classroom = ?
+			  AND combined_classroom.day_name = ?
 			  AND (
-					(t1.start_time < t3.end_time AND t1.end_time > t3.start_time)
+				  t1.start_time < combined_classroom.end_time
+				  AND t1.end_time > combined_classroom.start_time
 			  )
 		)
 	) AS available_slots
 	ORDER BY available_slots.start_time;
 	`
 
-	rows, err := config.Database.Query(query, facultyName, day, classroomName, day)
+	rows, err := config.Database.Query(
+		query,
+		academicYearID, academicYearID, academicYearID, // For combined_faculty
+		facultyName, day,
+		academicYearID, academicYearID, academicYearID, // For combined_classroom
+		classroomName, day,
+	)
 	if err != nil {
 		return nil, err
 	}

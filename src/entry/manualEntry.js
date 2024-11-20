@@ -42,11 +42,11 @@ function ManualEntry() {
     useEffect(() => {
         const fetchSubjectOptions = async () => {
             try {
-                // Loop through each semester and department only if they are available
+          
                 if (academicYear && semester && departments && section) {
                     for (const sem of semester) {
                         for (const dept of departments) {
-                            // Construct the subject data object
+                    
                             const subjectData = {
                                 department_id: dept.value,
                                 semester_id: sem.value,
@@ -54,11 +54,11 @@ function ManualEntry() {
                                 section_id: section.value,
                             };
     
-                            console.log(subjectData); // Log the data being sent
+                            console.log(subjectData);
     
-                            // Make the POST request with the constructed data object
+                      
                             const response = await axios.post('http://localhost:8080/subjectoptions', subjectData);
-                            setSubjectOptions(response.data); // Assuming response contains the list of subject options
+                            setSubjectOptions(response.data);
                         }
                     }
                 } else {
@@ -69,26 +69,26 @@ function ManualEntry() {
             }
         };
     
-        // Fetch subject options only if all required values are set
+     
         if (academicYear && semester && departments && section) {
             fetchSubjectOptions();
         }
     }, [academicYear, semester, departments, section]);
-     // Added selectedOption as dependency
+  
     
 
     
 
     useEffect(() => {
         const fetchCourseCodeOptions = async () => {
-            if (!subject) return; // Only fetch if a subject is selected
+            if (!subject) return; 
             try {
                 const response = await axios.get('http://localhost:8080/course-code', {
               
-                    params: { subject_name: subject.label }, // Passing selected subject name as a query param
+                    params: { subject_name: subject.label },
                 });
                 setCourseCodeOptions(Array.isArray(response.data) ? response.data : []);
-                // Wrap response in array to match CustomSelect options format
+             
             } catch (error) {
                 console.error('Error fetching course code options:', error);
             }
@@ -98,7 +98,7 @@ function ManualEntry() {
 
 
     useEffect(() => {
-        // Fetching initial options from the backend
+       
         const fetchOptions = async () => {
             try {
                 const response = await axios.get('http://localhost:8080/manual/options');
@@ -163,18 +163,18 @@ function ManualEntry() {
         fetchSection();
       }, []);
 
-      // Effect to update semesters based on the selected academic year
+     
       useEffect(() => {
         if (academicYear) {
             const yearLabel = academicYear.label.toUpperCase();
-            const isOdd = /ODD/.test(yearLabel); // Check if it contains 'ODD'
+            const isOdd = /ODD/.test(yearLabel);
             const filteredSemesters = semOptions.filter(sem => {
-                // Show only odd or even semesters based on the selected academic year
+         
                 return isOdd ? /S[1357]/i.test(sem.label) : /S[2468]/i.test(sem.label);
             });
             setFilteredSemOptions(filteredSemesters);
         } else {
-            // Reset semesters if no academic year is selected
+          
             setFilteredSemOptions(semOptions);
         }
     }, [academicYear, semOptions]);
@@ -200,7 +200,7 @@ function ManualEntry() {
     
             if (selectedOption.value === 0) { // First option
                 data = [{
-                    subject_name: subject.value,
+                    subject_name: subject.label,
                     department_id: dept.value,
                     semester_id: sem.value,
                     day_name: day ? day.value : null,
@@ -214,7 +214,7 @@ function ManualEntry() {
                     section_id: section.value,
                 },
                 {
-                    subject_name: subject.value,
+                    subject_name: subject.label,
                     department_id: dept.value,
                         semester_id: sem.value,
                     day_name: day ? day.value : null,
@@ -229,7 +229,7 @@ function ManualEntry() {
                 }];
             } else if (selectedOption.value === 1) { // Second option
                 data = [{
-                    subject_name: subject.value,
+                    subject_name: subject.label,
                     department_id: dept.value,
                         semester_id: sem.value,
                     day_name: day ? day.value : null,
@@ -246,9 +246,9 @@ function ManualEntry() {
     
             console.log('Data to be sent for ', data);
     
-            // Sending the data to the backend
+           
             await axios.post('http://localhost:8080/manual/submit', data);
-            // console.log('Form submitted successfully for department', dept.value, 'and semester', sem.value);
+           
             setIsModalOpen(true); 
         }
     }// Open the modal upon successful submission

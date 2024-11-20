@@ -23,7 +23,9 @@ function LabEntry() {
     const [labendTime, setLabEndTime] = useState(null);
     const [endTimeOptions, setEndTimeOptions] = useState([]);
     const [subject, setSubject] = useState('');
+    const [subjectOptions, setSubjectOptions] = useState([]);
     const [courseCode, setCourseCode] = useState('');
+    const [courseCodeOptions, setCourseCodeOptions] = useState([]);
     const [faculty, setFaculty] = useState(null);
     const [facultyOptions, setFacultyOptions] = useState([]);
     const [academicYear, setAcademicYear] = useState(null);
@@ -35,14 +37,68 @@ function LabEntry() {
     const [section, setSection] = useState(null);
     const [sectionOptions, setSectionOptions] = useState([]);
 
+    
     useEffect(() => {
-        // Fetching initial options from the backend
+        const fetchSubjectOptions = async () => {
+            try {
+          
+                if (academicYear && semester && departments && section) {
+                    for (const sem of semester) {
+                        for (const dept of departments) {
+                    
+                            const subjectData = {
+                                department_id: dept.value,
+                                semester_id: sem.value,
+                                academic_year_id: academicYear ? academicYear.value : null,
+                                section_id: section.value,
+                            };
+    
+                            console.log(subjectData);
+    
+                      
+                            const response = await axios.post('http://localhost:8080/subjectoptions', subjectData);
+                            setSubjectOptions(response.data);
+                        }
+                    }
+                } else {
+                    console.error('Missing one or more required values.');
+                }
+            } catch (error) {
+                console.error('Error fetching subject options:', error);
+            }
+        };
+    
+     
+        if (academicYear && semester && departments && section) {
+            fetchSubjectOptions();
+        }
+    }, [academicYear, semester, departments, section]);
+
+    useEffect(() => {
+        const fetchCourseCodeOptions = async () => {
+            if (!subject) return; 
+            try {
+                const response = await axios.get('http://localhost:8080/course-code', {
+              
+                    params: { subject_name: subject.label },
+                });
+                setCourseCodeOptions(Array.isArray(response.data) ? response.data : []);
+             
+            } catch (error) {
+                console.error('Error fetching course code options:', error);
+            }
+        };
+        fetchCourseCodeOptions();
+    }, [subject]);
+
+    useEffect(() => {
+
         const fetchOptions = async () => {
             try {
                 const response = await axios.get('http://localhost:8080/manual/options');
                 setDayOptions(response.data.dayOptions);
-                setStartTimeOptions(response.data.startTimeOptions);
-                setEndTimeOptions(response.data.endTimeOptions);
+                // setStartTimeOptions(response.data.startTimeOptions);
+                // setEndTimeOptions(response.data.endTimeOptions);
                 setFacultyOptions(response.data.facultyOptions);
             } catch (error) {
                 console.error('Error fetching options:', error);
@@ -101,18 +157,18 @@ function LabEntry() {
         fetchSection();
       }, []);
 
-      // Effect to update semesters based on the selected academic year
+  
       useEffect(() => {
         if (academicYear) {
             const yearLabel = academicYear.label.toUpperCase();
-            const isOdd = /ODD/.test(yearLabel); // Check if it contains 'ODD'
+            const isOdd = /ODD/.test(yearLabel); 
             const filteredSemesters = semOptions.filter(sem => {
-                // Show only odd or even semesters based on the selected academic year
+               
                 return isOdd ? /S[1357]/i.test(sem.label) : /S[2468]/i.test(sem.label);
             });
             setFilteredSemOptions(filteredSemesters);
         } else {
-            // Reset semesters if no academic year is selected
+          
             setFilteredSemOptions(semOptions);
         }
     }, [academicYear, semOptions]);
@@ -128,6 +184,38 @@ function LabEntry() {
         };
         fetchClassroomOptions();
     }, []);
+
+    const fetchAvailableTimings = async () => {
+        if ( academicYear && faculty && venue && day) {
+          try {
+            const response = await axios.get(
+              `http://localhost:8080/classroomavailabletimings/${academicYear.value}/${faculty.value}/${day.value}/${venue.value}`
+            );
+    
+            const timings = response.data;
+            const startOptions = timings.map((timing) => ({
+              label: timing.start_time,
+              value: timing.start_time,
+            }));
+    
+            const endOptions = timings.map((timing) => ({
+              label: timing.end_time,
+              value: timing.end_time,
+            }));
+    
+            setStartTimeOptions(startOptions);
+            setEndTimeOptions(endOptions);
+          } catch (error) {
+            console.error("Error fetching available timings:", error);
+          }
+        }
+      };
+    
+  
+      useEffect(() => {
+        fetchAvailableTimings();
+      }, [faculty, venue, day]);
+    
     
 
     const handleSubmit = async () => {
@@ -138,7 +226,7 @@ function LabEntry() {
     
             if (selectedOption.value === 0) { // First option
                 data = [{
-                    subject_name: subject,
+                    subject_name: subject.label,
                     department_id: dept.value,
                     semester_id: sem.value,
                     day_name: day ? day.value : null,
@@ -147,19 +235,19 @@ function LabEntry() {
                     faculty_name: faculty ? faculty.value : null,
                     classroom: venue ? venue.value : null,
                     academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode,
+                    course_code: courseCode.value,
                     status: selectedOption.value,
                     section_id: section.value,
                 },
                 {
-                    subject_name: subject,
+                    subject_name: subject.label,
                     department_id: dept.value,
                         semester_id: sem.value,
                     day_name: day ? day.value : null,
                     faculty_name: faculty ? faculty.value : null,
                     classroom: venue ? venue.value : null,
                     academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode,
+                    course_code: courseCode.value,
                     status: selectedOption.value,
                     section_id: section.value,
                     start_time: labstartTime ? labstartTime.value : null, 
@@ -167,7 +255,7 @@ function LabEntry() {
                 }];
             } else if (selectedOption.value === 1) { // Second option
                 data = [{
-                    subject_name: subject,
+                    subject_name: subject.label,
                     department_id: dept.value,
                         semester_id: sem.value,
                     day_name: day ? day.value : null,
@@ -176,7 +264,7 @@ function LabEntry() {
                     faculty_name: faculty ? faculty.value : null,
                     classroom: venue ? venue.value : null,
                     academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode,
+                    course_code: courseCode.value,
                     status: selectedOption.value,
                     section_id: section.value,
                 }];
@@ -250,19 +338,24 @@ function LabEntry() {
             />
                         </div>
                         <div className="form-group">
-                            <InputBox
+                        <CustomSelect
                                 label="SUBJECT NAME"
                                 placeholder="SUBJECT NAME"
                                 value={subject}
                                 onChange={setSubject}
+                                options={subjectOptions}
+                               
                             />
                         </div>
+                       
                         <div className="form-group">
-                            <InputBox
+                        <CustomSelect
                                 label="COURSE CODE"
                                 placeholder="COURSE CODE"
                                 value={courseCode}
-                                onChange={setCourseCode}
+                                 onChange={setCourseCode}
+                                options={courseCodeOptions}
+                               
                             />
                         </div>
                         <div className="form-group">
@@ -279,7 +372,15 @@ function LabEntry() {
       />
                         </div>
                       
-                        
+                        <div className="form-group">
+                            <CustomSelect
+                                label="FACULTY"
+                                placeholder="FACULTY"
+                                value={faculty}
+                                onChange={setFaculty}
+                                options={facultyOptions}
+                            />
+                        </div>
                         <div className="form-group">
                             <CustomSelect
                                 label="CLASSROOM"
@@ -291,11 +392,11 @@ function LabEntry() {
                         </div>
                         <div className="form-group">
                             <CustomSelect
-                                label="FACULTY"
-                                placeholder="FACULTY"
-                                value={faculty}
-                                onChange={setFaculty}
-                                options={facultyOptions}
+                                label="DAY"
+                                placeholder="DAY"
+                                value={day}
+                                onChange={setDay}
+                                options={dayOptions}
                             />
                         </div>
                         {selectedOption && selectedOption.value === 0 && (
@@ -332,15 +433,7 @@ function LabEntry() {
                                 options={endTimeOptions}
                             />
                         </div>
-                        <div className="form-group">
-                            <CustomSelect
-                                label="DAY"
-                                placeholder="DAY"
-                                value={day}
-                                onChange={setDay}
-                                options={dayOptions}
-                            />
-                        </div>
+                      
                         <div className="center-button">
                             <CustomButton
                                 width="150px"

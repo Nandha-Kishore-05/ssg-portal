@@ -28,11 +28,11 @@ function SideBar(props) {
       try {
         const response = await axios.get('http://localhost:8080/getResource', {
           headers: {
-            Authorization: `${authToken}`, // Use the actual token here
+            Authorization: `${authToken}`, 
           },
         });
 
-        // Transform fetched data into menu items
+      
         const fetchedMenu = response.data.data.map((resource) => ({
           id: resource.id,
           label: resource.name,
@@ -47,7 +47,7 @@ function SideBar(props) {
     fetchResources();
   }, []);
 
-  // Define a mapping between resource labels and icons
+
   const getIcon = (label) => {
     switch (label) {
       case 'Dashboard':
@@ -77,7 +77,7 @@ function SideBar(props) {
               case 'Lab Entry':
                 return <EditIcon />;
       default:
-        return null; // Return null if no matching icon
+        return null; 
     }
   };
 
@@ -98,7 +98,7 @@ function SideBar(props) {
                 onClick={() => toggleSubMenu(item.id)}
                 className={props.rId === item.id ? 'sidebar-menu-item sidebar-selected' : 'sidebar-menu-item'}
               >
-                {getIcon(item.label)} {/* Display the icon */}
+                {getIcon(item.label)}
                 <h4>{item.label}</h4>
               </div>
             </Link>
