@@ -227,7 +227,9 @@ func Masterdownload(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Row scan error: " + err.Error()})
 			return
 		}
-
+		fmt.Printf("Fetched Data: Day=%s, Start=%s, End=%s, Subject=%s, Faculty=%s\n",
+			dayName, startTime, endTime, subjectName, facultyName)
+		timeSlot := fmt.Sprintf("%s - %s", startTime, endTime)
 		// Organize the data into the departmentData map
 		if _, exists := departmentData[deptName]; !exists {
 			departmentData[deptName] = make(map[string]map[string]map[string]map[string]string)
@@ -241,7 +243,7 @@ func Masterdownload(c *gin.Context) {
 		if _, exists := departmentData[deptName][semesterID][section][dayName]; !exists {
 			departmentData[deptName][semesterID][section][dayName] = make(map[string]string)
 		}
-		timeSlot := fmt.Sprintf("%s - %s", startTime, endTime)
+
 		departmentData[deptName][semesterID][section][dayName][timeSlot] = fmt.Sprintf("%s\n%s", subjectName, facultyName)
 	}
 
