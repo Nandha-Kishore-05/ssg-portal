@@ -34,46 +34,58 @@ function ManualEntry() {
     const [venueOptions, setVenueOptions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
     const [selectedOption, setSelectedOption] = useState(null);
-    const [section, setSection] = useState(null);
+    const [section, setSection] = useState([]);
     const [sectionOptions, setSectionOptions] = useState([]);
 
   
 
-    useEffect(() => {
-        const fetchSubjectOptions = async () => {
-            try {
+    // useEffect(() => {
+    //     const fetchSubjectOptions = async () => {
+    //         try {
           
-                if (academicYear && semester && departments && section) {
-                    for (const sem of semester) {
-                        for (const dept of departments) {
+    //             if (academicYear && semester && departments && section) {
+    //                 for (const sem of semester) {
+    //                     for (const dept of departments) {
                     
-                            const subjectData = {
-                                department_id: dept.value,
-                                semester_id: sem.value,
-                                academic_year_id: academicYear ? academicYear.value : null,
-                                section_id: section.value,
-                            };
+    //                         const subjectData = {
+    //                             department_id: dept.value,
+    //                             semester_id: sem.value,
+    //                             academic_year_id: academicYear ? academicYear.value : null,
+    //                             section_id: section.value,
+    //                         };
     
-                            console.log(subjectData);
+    //                         console.log(subjectData);
     
                       
-                            const response = await axios.post('http://localhost:8080/subjectoptions', subjectData);
-                            setSubjectOptions(response.data);
-                        }
-                    }
-                } else {
-                    console.error('Missing one or more required values.');
-                }
-            } catch (error) {
-                console.error('Error fetching subject options:', error);
-            }
-        };
+    //                         const response = await axios.post('http://localhost:8080/subjectoptions', subjectData);
+    //                         setSubjectOptions(response.data);
+    //                     }
+    //                 }
+    //             } else {
+    //                 console.error('Missing one or more required values.');
+    //             }
+    //         } catch (error) {
+    //             console.error('Error fetching subject options:', error);
+    //         }
+    //     };
     
      
-        if (academicYear && semester && departments && section) {
-            fetchSubjectOptions();
-        }
-    }, [academicYear, semester, departments, section]);
+    //     if (academicYear && semester && departments && section) {
+    //         fetchSubjectOptions();
+    //     }
+    // }, [academicYear, semester, departments, section]);
+
+    useEffect(() => {
+        const fetchSubjectptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/subjectoptions');
+                setSubjectOptions(response.data);
+            } catch (error) {
+                console.error('Error fetching subject  options:', error);
+            }
+        };
+        fetchSubjectptions();
+    }, []);
   
     
 
@@ -191,76 +203,78 @@ function ManualEntry() {
         fetchClassroomOptions();
     }, []);
     
-
     const handleSubmit = async () => {
         try {
+            const data = [];
+    
             for (const sem of semester) {
                 for (const dept of departments) {
-            let data;
-    
-            if (selectedOption.value === 0) { // First option
-                data = [{
-                    subject_name: subject.label,
-                    department_id: dept.value,
-                    semester_id: sem.value,
-                    day_name: day ? day.value : null,
-                    start_time: startTime ? startTime.value : null,
-                    end_time: endTime ? endTime.value : null,
-                    faculty_name: faculty ? faculty.value : null,
-                    classroom: venue ? venue.value : null,
-                    academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode.value,
-                    status: selectedOption.value,
-                    section_id: section.value,
-                },
-                {
-                    subject_name: subject.label,
-                    department_id: dept.value,
-                        semester_id: sem.value,
-                    day_name: day ? day.value : null,
-                    faculty_name: faculty ? faculty.value : null,
-                    classroom: venue ? venue.value : null,
-                    academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode.value,
-                    status: selectedOption.value,
-                    section_id: section.value,
-                    start_time: labstartTime ? labstartTime.value : null, 
-                    end_time: labendTime ? labendTime.value : null, 
-                }];
-            } else if (selectedOption.value === 1) { // Second option
-                data = [{
-                    subject_name: subject.label,
-                    department_id: dept.value,
-                        semester_id: sem.value,
-                    day_name: day ? day.value : null,
-                    start_time: startTime ? startTime.value : null,
-                    end_time: endTime ? endTime.value : null,
-                    faculty_name: faculty ? faculty.value : null,
-                    classroom: venue ? venue.value : null,
-                    academic_year: academicYear ? academicYear.value : null,
-                    course_code: courseCode.value,
-                    status: selectedOption.value,
-                    section_id: section.value,
-                }];
+                    for (const sec of section) { // Loop through selected sections
+                        if (selectedOption.value === 0) { // Lab Subject
+                            data.push(
+                                {
+                                    subject_name: subject.label,
+                                    department_id: dept.value,
+                                    semester_id: sem.value,
+                                    section_id: sec.value,
+                                    day_name: day?.value,
+                                    start_time: startTime?.value,
+                                    end_time: endTime?.value,
+                                    faculty_name: faculty?.value,
+                                    classroom: venue?.value,
+                                    academic_year: academicYear?.value,
+                                    course_code: courseCode?.value,
+                                    status: selectedOption.value,
+                                },
+                                {
+                                    subject_name: subject.label,
+                                    department_id: dept.value,
+                                    semester_id: sem.value,
+                                    section_id: sec.value,
+                                    day_name: day?.value,
+                                    start_time: labstartTime?.value,
+                                    end_time: labendTime?.value,
+                                    faculty_name: faculty?.value,
+                                    classroom: venue?.value,
+                                    academic_year: academicYear?.value,
+                                    course_code: courseCode?.value,
+                                    status: selectedOption.value,
+                                }
+                            );
+                        } else if (selectedOption.value === 1) { // Non-Lab Subject
+                            data.push({
+                                subject_name: subject.label,
+                                department_id: dept.value,
+                                semester_id: sem.value,
+                                section_id: sec.value,
+                                day_name: day?.value,
+                                start_time: startTime?.value,
+                                end_time: endTime?.value,
+                                faculty_name: faculty?.value,
+                                classroom: venue?.value,
+                                academic_year: academicYear?.value,
+                                course_code: courseCode?.value,
+                                status: selectedOption.value,
+                            });
+                        }
+                    }
+                }
             }
     
-            console.log('Data to be sent for ', data);
+            console.log('Final data payload:', data);
     
-           
+            // Submit the data to the backend
             await axios.post('http://localhost:8080/manual/submit', data);
-           
-            setIsModalOpen(true); 
-        }
-    }// Open the modal upon successful submission
+    
+            setIsModalOpen(true); // Open the modal upon success
         } catch (error) {
             console.error('Error submitting form:', error);
         }
     };
-    
+
     const handleCloseModal = () => {
         setIsModalOpen(false);
-    };
-
+    };  
 
     return (
         <AppLayout
@@ -310,6 +324,7 @@ function ManualEntry() {
               value={section}
               onChange={setSection}
               options={sectionOptions}
+              isMulti={true}
             />
                         </div>
                         <CustomSelect

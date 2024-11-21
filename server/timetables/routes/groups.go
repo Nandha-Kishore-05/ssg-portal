@@ -37,12 +37,12 @@ func GenerateTimetable(c *gin.Context) {
 	}
 
 	// Check if the periods are available
-	err = timetables.PeriodsAvailable(departmentID, academicYearID, semesterID, sectionID)
-	if err != nil {
-		log.Printf("Error checking available periods: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// err = timetables.PeriodsAvailable(departmentID, academicYearID, semesterID, sectionID)
+	// if err != nil {
+	// 	log.Printf("Error checking available periods: %v", err)
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
 
 	// Fetch other details required for timetable generation
 	semesters, err := timetables.GetSemesterDetails(semesterID)
