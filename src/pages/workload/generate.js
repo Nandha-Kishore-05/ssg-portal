@@ -116,6 +116,7 @@ import './workload.css';
 import CustomSelect from '../../components/select';
 import CustomButton from '../../components/button';
 import Timetable from './workload';
+import InputBox from '../../components/input';
 
 const GenerateTimetable = () => {
   const [department, setDepartment] = useState(null);
@@ -132,8 +133,8 @@ const GenerateTimetable = () => {
   const [academicsOptions, setAcademicsOptions] = useState([]);
   const [section, setSection] = useState(null);
   const [sectionOptions, setSectionOptions] = useState([]);
-
-
+  const [vieweddaysCount, setVieweddaysCount] = useState(null);
+  const [daysCount, setdaysCount] = useState('');
   // Fetch department options
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -210,11 +211,12 @@ const GenerateTimetable = () => {
   }, [academicYear, semOptions]);
 
   const handleViewTimetable = () => {
-    if (department && semester && academicYear) {
+    if (department && semester && academicYear && section && daysCount) {
       setViewedDepartment(department.value);
       setViewedSemester(semester.value);
       setViewedAcademic(academicYear.value);
       setViewedSection(section.value)
+      setVieweddaysCount(daysCount)
       setIsOpen(true);
     } else {
       console.error('Please select all required options (department, semester, academic year).');
@@ -254,16 +256,24 @@ const GenerateTimetable = () => {
               onChange={setSection}
               options={sectionOptions}
             />
+               <input
+              type="text"
+              placeholder="Enter the Number Of days"
+              value={daysCount}
+              onChange={(e) => setdaysCount(e.target.value)}
+              className="generate-search-input"
+            />
             <CustomButton
               width="150"
               label="Generate Timetable"
               onClick={handleViewTimetable}
               backgroundColor="#0878d3"
             />
+           
           </div>
 
-          {(viewedDepartment && viewedSemester && viewedAcademic && viewedSection && isOpen) && 
-            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} academicYearID={viewedAcademic} sectionID = {viewedSection}  />
+          {(viewedDepartment && viewedSemester && viewedAcademic && viewedSection && vieweddaysCount &&  isOpen) && 
+            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} academicYearID={viewedAcademic} sectionID = {viewedSection} day = {vieweddaysCount}  />
           }
         </div>
       }

@@ -34,7 +34,7 @@ function ManualEntry() {
     const [venueOptions, setVenueOptions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
     const [subjectType, setSubjectType] = useState('');
-    const [subjectTypeOption, setsubjectTypeOption] = useState(null);
+    const [subjectTypeOption, setsubjectTypeOption] = useState([]);
     const [section, setSection] = useState([]);
     const [sectionOptions, setSectionOptions] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
@@ -225,7 +225,7 @@ function ManualEntry() {
                                     status: subjectType.value,
                                 }
                             );
-                        } else if (subjectType.value === 2 || 3 || 4 || 5 || 6 || 7) { // Non-Lab Subject
+                        } else if (subjectType.value === 2 || 3 || 4 || 5 || 6 || 7) { 
                             data.push({
                                 subject_name: subject.label,
                                 department_id: dept.value,
@@ -247,22 +247,22 @@ function ManualEntry() {
     
             console.log('Final data payload:', data);
     
-            // Submit the data to the backend
+         
             await axios.post('http://localhost:8080/manual/submit', data);
-            setErrorMessage(''); // Clear any previous error
-            setIsModalOpen(true); // Open the modal upon success
+            setErrorMessage(''); 
+            setIsModalOpen(true);
         } catch (error) {
             console.error('Error submitting form:', error);
             setErrorMessage(
                 error.response?.data?.message || 'An error occurred during submission.'
             );
-            setIsModalOpen(true); // Open the modal to display the error
+            setIsModalOpen(true); 
         }
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
-        setErrorMessage(''); // Clear the error message when modal is closed
+        setErrorMessage(''); 
     };  
 
     return (

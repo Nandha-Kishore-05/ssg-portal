@@ -30,7 +30,7 @@ func main() {
 	}))
 
 	r.POST("/login", auth.Login)
-	r.GET("/timetable/:departmentID/:semesterId/:academicYearID/:sectionID", routes.GenerateTimetable)
+	r.GET("/timetable/:departmentID/:semesterId/:academicYearID/:sectionID/:daysCount", routes.GenerateTimetable)
 	r.POST("/timetable/save", timetables.SaveTimetable)
 	r.GET("/timetable/saved/:departmentID/:semesterId/:academicYearID/:sectionID", timetables.GetTimetable)
 	r.GET("/timetable/faculty/:faculty_name/:academicYearID", timetables.FacultyTimetable)
