@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-
 	"ssg-portal/config"
 
 	"github.com/gin-gonic/gin"
@@ -23,19 +22,29 @@ func DownloadTimetable(c *gin.Context) {
 	}
 
 	var academicYear string
-	yearQuery := `SELECT may.academic_year
-	FROM academic_year ay
-	JOIN master_academic_year may ON ay.academic_year = may.id
-	WHERE ay.semester_id = ?`
+	yearQuery := `SELECT 
+    DISTINCT
+    m.academic_year
+FROM 
+    timetable t
+JOIN 
+    master_academic_year m
+ON 
+    t.academic_year = m.id
+WHERE 
+    t.semester_id = ?`
 	err = config.Database.QueryRow(yearQuery, semesterID).Scan(&academicYear)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	query := `SELECT day_name, start_time, end_time, classroom, semester_id, department_id, section_id, subject_name, faculty_name
-		FROM timetable
-		WHERE semester_id = ?
-		ORDER BY section_id`
+	query := `SELECT t.day_name, t.start_time, t.end_time, t.classroom, t.semester_id, t.department_id, t.section_id, 
+	t.subject_name, t.faculty_name, d.name as department_name
+FROM timetable t
+JOIN departments d ON t.department_id = d.id
+WHERE t.semester_id = ?
+ORDER BY t.section_id`
+
 	rows, err := config.Database.Query(query, semesterID)
 	if err != nil {
 		log.Fatal(err)
@@ -62,16 +71,16 @@ func DownloadTimetable(c *gin.Context) {
 	}
 
 	timetableData := make(map[string][][]string)
-
 	for rows.Next() {
 		var day, startTime, endTime, classroom, section, subject, faculty string
 		var semesterID, departmentID int
-		if err := rows.Scan(&day, &startTime, &endTime, &classroom, &semesterID, &departmentID, &section, &subject, &faculty); err != nil {
+		var departmentName string
+		if err := rows.Scan(&day, &startTime, &endTime, &classroom, &semesterID, &departmentID, &section, &subject, &faculty, &departmentName); err != nil {
 			log.Fatal(err)
 		}
 
 		// Create a key for timetable data, truncating the section if necessary.
-		key := fmt.Sprintf("D%d-S%d", departmentID, semesterID)
+		key := fmt.Sprintf("%s-S%d", departmentName, semesterID)
 		if section != "" {
 			key += fmt.Sprintf("-Sec%s", section)
 		}
@@ -87,7 +96,11 @@ func DownloadTimetable(c *gin.Context) {
 
 		for i, slot := range timeSlots {
 			if startTime == slot[:8] && endTime == slot[11:] {
-				timetableData[key][rowIdx][i] = fmt.Sprintf("%s\n%s", subject, faculty)
+				// Append the subject and faculty to the existing data for the time slot
+				if timetableData[key][rowIdx][i] != "" {
+					timetableData[key][rowIdx][i] += "\n"
+				}
+				timetableData[key][rowIdx][i] += fmt.Sprintf("%s\n%s", subject, faculty)
 				break
 			}
 		}

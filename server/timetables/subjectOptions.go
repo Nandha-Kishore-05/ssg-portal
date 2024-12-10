@@ -57,15 +57,16 @@ import (
 
 //	    c.JSON(http.StatusOK, subjectOptions)
 //	}
-func SubjectOptions(c *gin.Context) {
-	rows, err := config.Database.Query("SELECT id, name FROM subjects")
+
+func SubjectTypeOptions(c *gin.Context) {
+	rows, err := config.Database.Query("SELECT id,subject_type_name FROM subject_type")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	defer rows.Close()
 
-	var Subjectoptions []map[string]interface{}
+	var options []map[string]interface{}
 	for rows.Next() {
 		var id int
 		var name string
@@ -73,7 +74,44 @@ func SubjectOptions(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		Subjectoptions = append(Subjectoptions, map[string]interface{}{
+		options = append(options, map[string]interface{}{
+			"label": name,
+			"value": id,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, options)
+}
+func SubjectOptions(c *gin.Context) {
+	// Get the subject type ID from the query parameter
+	subjectTypeID := c.DefaultQuery("subject_type_id", "")
+	if subjectTypeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Subject type ID is required"})
+		return
+	}
+
+	// Query the database to get subjects based on the subject type
+	rows, err := config.Database.Query("SELECT id, name FROM subjects WHERE status = ?", subjectTypeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	var subjectOptions []map[string]interface{}
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		subjectOptions = append(subjectOptions, map[string]interface{}{
 			"label": name,
 			"value": name,
 		})
@@ -84,8 +122,9 @@ func SubjectOptions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, Subjectoptions)
+	c.JSON(http.StatusOK, subjectOptions)
 }
+
 func CourseCodeOptions(c *gin.Context) {
 	// Get the subject name from the query parameter
 	subjectName := c.DefaultQuery("subject_name", "")

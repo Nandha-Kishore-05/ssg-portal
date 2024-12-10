@@ -16,15 +16,38 @@ func SubmitManualEntry(c *gin.Context) {
 		return
 	}
 
-	// Prepare the SQL query
-	query := `
-		INSERT INTO timetable_skips (subject_name, department_id, semester_id, day_name, start_time, end_time, faculty_name, classroom, academic_year, course_code, section_id)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	// Validation query to check for conflicts
+	validationQuery := `
+		SELECT COUNT(*) 
+		FROM timetable_skips 
+		WHERE academic_year = ? AND start_time = ? AND end_time = ? AND day_name = ? AND status != ?
 	`
 
-	// Loop through each request and insert into the database
+	// Insert query
+	insertQuery := `
+		INSERT INTO timetable_skips (subject_name, department_id, semester_id, day_name, start_time, end_time, faculty_name, classroom, academic_year, course_code, section_id, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+
 	for _, request := range requests {
-		_, err := config.Database.Exec(query, request.Subject, request.Department, request.Semester, request.Day, request.StartTime, request.EndTime, request.Faculty, request.Classroom, request.AcademicYear, request.CourseCode, request.SectionID)
+		// Check for conflicting entries
+		var conflictCount int
+		err := config.Database.QueryRow(validationQuery, request.AcademicYear, request.StartTime, request.EndTime, request.Day, request.Status).Scan(&conflictCount)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate data"})
+			return
+		}
+
+		// If a conflict with a different status is found, return an error message
+		if conflictCount > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Conflict detected: An entry with the same start time, end time, and day but a different status already exists.",
+			})
+			return
+		}
+
+		// Proceed to insert the entry if no conflict
+		_, err = config.Database.Exec(insertQuery, request.Subject, request.Department, request.Semester, request.Day, request.StartTime, request.EndTime, request.Faculty, request.Classroom, request.AcademicYear, request.CourseCode, request.SectionID, request.Status)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save data"})
 			return

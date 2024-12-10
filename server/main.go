@@ -63,6 +63,7 @@ func main() {
 	r.GET("/download/:academic_year_id", excel.Masterdownload)
 	r.GET("/studentoptions", studententry.GetStudentOptions)
 	r.GET("/subjectoptions", timetables.SubjectOptions)
+	r.GET("/subjectTypeoptions", timetables.SubjectTypeOptions)
 	r.GET("/classroomavailabletimings/:academicYearID/:facultyName/:day/:classroomName", timetables.GetAvailableTimingsForFacultyAndClassroom)
 
 	r.GET("/course-code", timetables.CourseCodeOptions)

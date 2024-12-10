@@ -33,59 +33,42 @@ function ManualEntry() {
     const [venue, setVenue] = useState(null);
     const [venueOptions, setVenueOptions] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
-    const [selectedOption, setSelectedOption] = useState(null);
+    const [subjectType, setSubjectType] = useState('');
+    const [subjectTypeOption, setsubjectTypeOption] = useState(null);
     const [section, setSection] = useState([]);
     const [sectionOptions, setSectionOptions] = useState([]);
-
-  
-
-    // useEffect(() => {
-    //     const fetchSubjectOptions = async () => {
-    //         try {
-          
-    //             if (academicYear && semester && departments && section) {
-    //                 for (const sem of semester) {
-    //                     for (const dept of departments) {
-                    
-    //                         const subjectData = {
-    //                             department_id: dept.value,
-    //                             semester_id: sem.value,
-    //                             academic_year_id: academicYear ? academicYear.value : null,
-    //                             section_id: section.value,
-    //                         };
-    
-    //                         console.log(subjectData);
-    
-                      
-    //                         const response = await axios.post('http://localhost:8080/subjectoptions', subjectData);
-    //                         setSubjectOptions(response.data);
-    //                     }
-    //                 }
-    //             } else {
-    //                 console.error('Missing one or more required values.');
-    //             }
-    //         } catch (error) {
-    //             console.error('Error fetching subject options:', error);
-    //         }
-    //     };
-    
-     
-    //     if (academicYear && semester && departments && section) {
-    //         fetchSubjectOptions();
-    //     }
-    // }, [academicYear, semester, departments, section]);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
-        const fetchSubjectptions = async () => {
+        const fetchSubjectTypeOptions = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/subjectoptions');
-                setSubjectOptions(response.data);
+                const response = await axios.get('http://localhost:8080/subjectTypeoptions');
+                setsubjectTypeOption(response.data);
             } catch (error) {
                 console.error('Error fetching subject  options:', error);
             }
         };
-        fetchSubjectptions();
+        fetchSubjectTypeOptions();
     }, []);
+
+
+
+    useEffect(() => {
+        const fetchSubjectOptions = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/subjectoptions', {
+                    params: { subject_type_id: subjectType?.value || '' }, // Safeguard for undefined `subjectType`
+                });
+                setSubjectOptions(response.data || []); // Default to an empty array
+            } catch (error) {
+                console.error('Error fetching subject options:', error);
+                setSubjectOptions([]); // Ensure fallback state on error
+            }
+        };
+        fetchSubjectOptions();
+    }, [subjectType]); // Re-fetch when `subjectType` changes
+    
+    
   
     
 
@@ -204,13 +187,14 @@ function ManualEntry() {
     }, []);
     
     const handleSubmit = async () => {
+        console.log(subjectType.value)
         try {
             const data = [];
     
             for (const sem of semester) {
                 for (const dept of departments) {
                     for (const sec of section) { // Loop through selected sections
-                        if (selectedOption.value === 0) { // Lab Subject
+                        if (subjectType.value === 1) { // Lab Subject
                             data.push(
                                 {
                                     subject_name: subject.label,
@@ -224,7 +208,7 @@ function ManualEntry() {
                                     classroom: venue?.value,
                                     academic_year: academicYear?.value,
                                     course_code: courseCode?.value,
-                                    status: selectedOption.value,
+                                    status: subjectType.value,
                                 },
                                 {
                                     subject_name: subject.label,
@@ -238,10 +222,10 @@ function ManualEntry() {
                                     classroom: venue?.value,
                                     academic_year: academicYear?.value,
                                     course_code: courseCode?.value,
-                                    status: selectedOption.value,
+                                    status: subjectType.value,
                                 }
                             );
-                        } else if (selectedOption.value === 1) { // Non-Lab Subject
+                        } else if (subjectType.value === 2 || 3 || 4 || 5 || 6 || 7) { // Non-Lab Subject
                             data.push({
                                 subject_name: subject.label,
                                 department_id: dept.value,
@@ -254,7 +238,7 @@ function ManualEntry() {
                                 classroom: venue?.value,
                                 academic_year: academicYear?.value,
                                 course_code: courseCode?.value,
-                                status: selectedOption.value,
+                                status: subjectType.value,
                             });
                         }
                     }
@@ -265,15 +249,20 @@ function ManualEntry() {
     
             // Submit the data to the backend
             await axios.post('http://localhost:8080/manual/submit', data);
-    
+            setErrorMessage(''); // Clear any previous error
             setIsModalOpen(true); // Open the modal upon success
         } catch (error) {
             console.error('Error submitting form:', error);
+            setErrorMessage(
+                error.response?.data?.message || 'An error occurred during submission.'
+            );
+            setIsModalOpen(true); // Open the modal to display the error
         }
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+        setErrorMessage(''); // Clear the error message when modal is closed
     };  
 
     return (
@@ -327,13 +316,25 @@ function ManualEntry() {
               isMulti={true}
             />
                         </div>
+                        <div className="form-group">
+                        <CustomSelect
+        label="SUBJECT TYPE"
+        options={subjectTypeOption}
+          value={subjectType}
+                                onChange={setSubjectType}
+        placeholder="SUBJECT TYPE"
+        
+    
+    
+      />
+                        </div>
                         <CustomSelect
                                 label="SUBJECT NAME"
                                 placeholder="SUBJECT NAME"
                                 value={subject}
                                 onChange={setSubject}
-                                options={subjectOptions}
-                               
+                                
+                                options={subjectOptions.length > 0 ? subjectOptions : []}
                             />
                         </div>
                        
@@ -347,19 +348,7 @@ function ManualEntry() {
                                
                             />
                         </div>
-                        <div className="form-group">
-                        <CustomSelect
-        label="Choose an Option"
-        options={[
-            { label: "Lab subject", value: 0 },
-            { label: "Non-Lab Subject", value: 1 },
-        
-          ]}
-        placeholder="Select an option"
-    
-        onChange={setSelectedOption}
-      />
-                        </div>
+                        
                       
                         
                         <div className="form-group">
@@ -380,7 +369,7 @@ function ManualEntry() {
                                 options={facultyOptions}
                             />
                         </div>
-                        {selectedOption && selectedOption.value === 0 && (
+                        {subjectType && subjectType.value === 1 && (
         <div className='row'>
           <CustomSelect
             label="START TIME"
@@ -439,13 +428,22 @@ function ManualEntry() {
                         >
                             <Box className="modal-box">
                                 <Typography id="modal-title" variant="h5" component="h1" className="modal-title">
-                                    Submission Successful!
+                                    {errorMessage ? 'Submission Failed!' : 'Submission Successful!'}
                                 </Typography>
-                                <Typography id="modal-description" className="modal-description">
-                                    Your manual entry has been submitted successfully.
-                                </Typography>
+                                {errorMessage && (
+                                    <Typography id="modal-description" variant="body1" color="error" className="modal-description">
+                                        {errorMessage}
+                                    </Typography>
+                                )}
+                                {!errorMessage && (
+                                    <Typography id="modal-description" variant="body1" className="modal-description">
+                                        Your data has been successfully submitted.
+                                    </Typography>
+                                )}
                                 <CustomButton
+                                    width="150px"
                                     label="Close"
+                                    backgroundColor="#0878d3"
                                     onClick={handleCloseModal}
                                 />
                             </Box>
