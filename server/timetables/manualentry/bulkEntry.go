@@ -96,18 +96,7 @@ func BulkInsert(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Bulk insert successful"})
 }
 
-// Helper function to split and trim a comma-separated string
-// func splitAndTrim(input string) []string {
-// 	var result []string
-// 	items := strings.Split(input, ",")
-// 	for _, item := range items {
-// 		trimmed := strings.TrimSpace(item)
-// 		if trimmed != "" {
-// 			result = append(result, trimmed)
-// 		}
-// 	}
-// 	return result
-// }
+
 
 // getDynamicPeriodSlots dynamically generates start and end times for the given period(s).
 func getDynamicPeriodSlots(periods int) ([]struct{ StartTime, EndTime string }, error) {

@@ -17,6 +17,7 @@ import StudentTable from "../pages/student/studentTable";
 import StudentTimetable from "../pages/student/studentTimetable";
 import LabEntry from "../pages/labentry/labentry";
 import Bulkentry from "../entry/bulkentry"
+import ExcelUpload from "../pages/dashboard/dashboard";
 
 
 
@@ -28,7 +29,7 @@ const routes = [
   },
   {
     path: "/dashboard",
-    element: <ManualEntry />,
+    element: <ExcelUpload />,
   },
   {
     path: "/timetable",
