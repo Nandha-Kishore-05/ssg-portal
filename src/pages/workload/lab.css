@@ -70,7 +70,8 @@
     text-align: center;
   }
   
-  .table td.day {
+  .day {
+    width: 8%;
     font-weight: 700;
     background-color: #6c757d;
     color: #ffffff;

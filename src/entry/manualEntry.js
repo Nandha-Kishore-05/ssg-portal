@@ -267,7 +267,7 @@ function ManualEntry() {
 
     return (
         <AppLayout
-            rId={7}
+            rId={1}
             title="Manual Entry"
             body={
                 <>

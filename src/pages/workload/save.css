@@ -77,8 +77,8 @@
  font-weight: 800;
   }
   
-  .table td.day {
-
+  .day {
+width: 8%;
     background-color: #6c757d;
     color: #ffffff;
   }

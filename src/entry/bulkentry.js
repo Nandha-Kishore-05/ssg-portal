@@ -1,11 +1,12 @@
 
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { Modal, Fade, Button } from "@mui/material";
 import { ArrowBackIosRounded, ArrowForwardIosRounded } from '@mui/icons-material';
 import AppLayout from "../layout/layout";
+import CustomSelect from "../components/select";
 
 
 
@@ -15,6 +16,49 @@ const Bulkentry = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10); // Default rows per page
   const [openModal, setOpenModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [semester, setSemester] = useState(null);
+  const [semOptions, setSemOptions] = useState([]);
+  const [academicYear, setAcademicYear] = useState(null);
+  const [academicsOptions, setAcademicsOptions] = useState([]);
+  const [filteredSemOptions, setFilteredSemOptions] = useState([]);
+
+ 
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/timetable/semoptions')
+      .then(response => {
+        setSemOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching semester options:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios.get('http://localhost:8080/acdemicYearOptions')
+      .then(response => {
+        setAcademicsOptions(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching academic year options:', error);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (academicYear && academicYear.label) {
+      // Check if the academic year label contains 'ODD' or 'EVEN' (case-insensitive)
+      const isOddYear = /ODD/i.test(academicYear.label); // Check for 'ODD' in a case-insensitive manner
+
+      const filteredSemOptions = semOptions.filter(sem => {
+        const semNumber = parseInt(sem.label.replace(/^\D+/g, ''), 10); // Extract the number from the semester label
+        return isOddYear ? [1, 3, 5, 7].includes(semNumber) : [2, 4, 6, 8].includes(semNumber);
+      });
+
+      setFilteredSemOptions(filteredSemOptions);
+    } else {
+      setFilteredSemOptions(semOptions); // Reset to show all if no academic year is selected
+    }
+  }, [academicYear, semOptions]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -30,7 +74,7 @@ const Bulkentry = () => {
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {
             header: 1, // Keep headers
             raw: false, // Parse dates/times automatically
-            dateNF: 'yyyy-mm-dd hh:mm:ss', // Custom format for date/time if necessary
+            dateNF: 'yyyy-mm-dd', // Custom format for date/time if necessary
         });
 
         // Manually adjust date/time fields if necessary
@@ -66,25 +110,32 @@ const Bulkentry = () => {
     return jsonData;
   };
   const sendDataToBackend = () => {
-    const jsonData = parseExcelToJson();
+    const jsonData = parseExcelToJson(); // Replace with your function to parse Excel data.
+  
     const formattedData = {
-      entries: jsonData.map(entry => ({
-        subject_name: entry.Subject,
-        department_name: entry.Department,
-        semester_id: parseInt(entry.Semester, 10),
-        day_name: entry["dayNmae"],  // Ensure this matches what backend expects
-        start_time: entry["start time"],
-        end_time: entry["end time"],
-        faculty_name: entry.Faculty,
-        classroom : entry["classroom"],
-        status: entry["Lab-subject"] === "NO" ? 1 : 0
-      }))
+      entries: jsonData.map(entry => {
+        const formattedEntry = {
+          semester: semester ? semester.value : null,
+      academicYear: academicYear ? academicYear.value : null,
+          department_name: (entry["Department"] || "").trim().toUpperCase(),
+          faculty_name: (entry["Faculty Name"] || "").trim(),
+          subject_name: (entry["Course Name"] || "").trim(),
+          course_code: (entry["Course Code"] || "").trim(),
+          section: (entry["Section"] || "").trim(),
+          subject_type: (entry["Subject Type"] || "").trim(),
+          classroom: (entry["VENUE"] || "").trim().toUpperCase(),
+          hour: (entry["HOUR"] || "").trim(),
+          date: entry["DATE"] ? new Date(entry["DATE"]).toISOString().split("T")[0] : null, // Convert DATE to YYYY-MM-DD
+        };
+  
+        return formattedEntry;
+      }),
     };
   
     axios.post('http://localhost:8080/manual/bulksubmit', formattedData, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     })
       .then(response => {
         console.log("Server response:", response);
@@ -97,6 +148,7 @@ const Bulkentry = () => {
         setOpenModal(true);
       });
   };
+  
   
   
   const handleCloseModal = () => {
@@ -121,16 +173,29 @@ const Bulkentry = () => {
             type="file"
             onChange={handleFileUpload}
           />
-          <div className="upload-section">
-            <center><br />
-              <h2>Here you can upload the Period Allocation list</h2>
+
+          <div style={{ backgroundColor: "white", padding: 17, marginTop: 20, borderRadius: "10px" }}>
+            <div style={{ display: 'flex', flexDirection: 'row', columnGap: 10, alignItems: "center", justifyContent: "space-between" }}>
+              <CustomSelect
+                placeholder="ACADEMIC YEAR"
+                value={academicYear}
+                onChange={setAcademicYear}
+                options={academicsOptions}
+              />
+              <CustomSelect
+                placeholder="SEMESTER"
+                value={semester}
+                onChange={setSemester}
+                options={filteredSemOptions} // Use filtered options here
+              />
+             
               <button
-                className="upload-button"
+                className="student-upload-button"
                 onClick={() => document.querySelector('.file-upload-input').click()}
               >
                 Upload Excel
               </button>
-            </center>
+            </div>
           </div>
           {excelData.length > 0 && (
             <div className="table-section">

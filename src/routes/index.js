@@ -16,7 +16,7 @@ import StudentEntry from "../pages/student/studentEntry";
 import StudentTable from "../pages/student/studentTable";
 import StudentTimetable from "../pages/student/studentTimetable";
 import LabEntry from "../pages/labentry/labentry";
-
+import Bulkentry from "../entry/bulkentry"
 
 
 
@@ -28,7 +28,7 @@ const routes = [
   },
   {
     path: "/dashboard",
-    element: <Dashboard />,
+    element: <ManualEntry />,
   },
   {
     path: "/timetable",
@@ -56,7 +56,7 @@ const routes = [
 
   {
     path: "/manualentry",
-    element: <ManualEntry />,
+    element: <Bulkentry />,
   },
   {
     path: "/subjectallocation",

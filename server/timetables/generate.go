@@ -1,4 +1,3 @@
-
 package timetables
 
 import (
@@ -139,11 +138,9 @@ func FetchManualTimetable(departmentID int, semesterID int, academicYearID int, 
 			manualTimetable[entry.DayName] = make(map[string][]models.TimetableEntry)
 		}
 
-	
 		manualTimetable[entry.DayName][entry.StartTime] = append(manualTimetable[entry.DayName][entry.StartTime], entry)
 	}
 
-	
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error during rows iteration: %w", err)
 	}
@@ -177,22 +174,22 @@ func CheckTimetableConflicts(generatedTimetable FacultyBasedTimetable, existingT
 			if existingEntries, ok := existingTimetable[facultyName][dayName]; ok {
 				for _, entry := range entries {
 					for _, existingEntry := range existingEntries {
-					
+
 						if entry.StartTime == existingEntry.StartTime &&
 							entry.EndTime == existingEntry.EndTime &&
 							entry.Classroom == existingEntry.Classroom &&
 							entry.SubjectName == existingEntry.SubjectName {
-							return true 
+							return true
 						}
 					}
 				}
 			}
 		}
 	}
-	return false 
+	return false
 }
 func GenerateTimetable(
-	daysCount int,
+	workingDays []models.WorkingDay,
 	hours []models.Hour,
 	subjects []models.Subject,
 	faculty []models.Faculty,
@@ -204,8 +201,7 @@ func GenerateTimetable(
 	departmentID int,
 	semesterID int,
 	academicYearID int,
-	sectionID int,
-) map[string]map[string][]models.TimetableEntry {
+	sectionID int) map[string]map[string][]models.TimetableEntry {
 
 	// Fetch existing timetable
 	existingTimetable, err := FetchExistingTimetable()
@@ -214,16 +210,187 @@ func GenerateTimetable(
 		return nil
 	}
 
-	// If no existing timetable, generate a random timetable
+	// If no existing timetable is found, generate a random timetable
 	if len(existingTimetable) == 0 {
-		return generateRandomTimetable(
-			daysCount, hours, subjects, faculty, classrooms, facultySubjects, 
-			section, semesters, departmentID, semesterID, academicYearID, sectionID,
-		)
+		return generateRandomTimetable(workingDays, hours, subjects, faculty, classrooms, facultySubjects, section, semesters, departmentID, semesterID, academicYearID, sectionID)
 	}
 
-	// If existing timetable is found, return it
-	return existingTimetable
+	skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
+	if err != nil {
+		fmt.Println("Error fetching timetable skips:", err)
+		return nil
+	}
+
+	manualTimetable, err := FetchManualTimetable(departmentID, semesterID, academicYearID, sectionID)
+	if err != nil {
+		fmt.Println("Error fetching manual timetable:", err)
+		return nil
+	}
+
+	// Initialize precomputed mappings
+	subjectClassrooms := make(map[string][]models.Classroom)
+	for _, subject := range subjects {
+		for _, cls := range classrooms {
+			if cls.DepartmentID == subject.DepartmentID {
+				subjectClassrooms[subject.Name] = append(subjectClassrooms[subject.Name], cls)
+			}
+		}
+	}
+
+	facultySubjectMap := make(map[int]map[int]bool)
+	for _, fs := range facultySubjects {
+		if facultySubjectMap[fs.FacultyID] == nil {
+			facultySubjectMap[fs.FacultyID] = make(map[int]bool)
+		}
+		facultySubjectMap[fs.FacultyID][fs.SubjectID] = true
+	}
+
+	status0Assignments := make(map[string]map[string]bool)
+	labAssigned := make(map[string]bool)
+
+	// Main timetable generation loop
+	for {
+		timetable := make(map[string]map[string][]models.TimetableEntry)
+		subjectsAssigned := make(map[string]map[string]bool)
+		periodsLeft := make(map[string]int)
+		facultyDailyCount := make(map[string]map[string]int)
+
+		for _, subject := range subjects {
+			periodsLeft[subject.Name] = subject.Period
+		}
+
+		facultyAssignments := make(map[string]map[string]string)
+		for _, workingDay := range workingDays {
+			dayName := workingDay.WorkingDate.Format("2006-01-02")
+
+			if timetable[dayName] == nil {
+				timetable[dayName] = make(map[string][]models.TimetableEntry)
+			}
+			if subjectsAssigned[dayName] == nil {
+				subjectsAssigned[dayName] = make(map[string]bool)
+			}
+			if facultyDailyCount[dayName] == nil {
+				facultyDailyCount[dayName] = make(map[string]int)
+			}
+			if facultyAssignments[dayName] == nil {
+				facultyAssignments[dayName] = make(map[string]string)
+			}
+			if status0Assignments[dayName] == nil {
+				status0Assignments[dayName] = make(map[string]bool)
+			}
+
+			if skips, ok := skipTimetable[dayName]; ok {
+				for startTime, entries := range skips {
+					for _, entry := range entries {
+						timetable[dayName][startTime] = append(timetable[dayName][startTime], entry)
+						subjectsAssigned[dayName][entry.SubjectName] = true
+					}
+				}
+			}
+
+			if manualEntries, ok := manualTimetable[dayName]; ok {
+				for startTime, entries := range manualEntries {
+					for _, entry := range entries {
+						if len(timetable[dayName][startTime]) == 0 {
+							timetable[dayName][startTime] = append(timetable[dayName][startTime], entry)
+							subjectsAssigned[dayName][entry.SubjectName] = true
+						}
+					}
+				}
+			}
+		}
+
+		rand.Seed(time.Now().UnixNano())
+		for _, workingDay := range workingDays {
+			dayName := workingDay.WorkingDate.Format("2006-01-02")
+			for _, hour := range hours {
+				startTime := hour.StartTime
+				if len(timetable[dayName][startTime]) > 0 {
+					continue
+				}
+
+				assigned := false
+				for attempts := 0; attempts < 1000; attempts++ {
+					var filteredSubjects []models.Subject
+					for _, subject := range subjects {
+						if periodsLeft[subject.Name] > 0 && !subjectsAssigned[dayName][subject.Name] {
+							if subject.Status == 0 && labAssigned[dayName] {
+								continue
+							}
+							filteredSubjects = append(filteredSubjects, subject)
+						}
+					}
+
+					if len(filteredSubjects) == 0 {
+						break
+					}
+
+					subject := filteredSubjects[rand.Intn(len(filteredSubjects))]
+
+					var availableFaculty []models.Faculty
+					for _, fac := range faculty {
+						if facultySubjectMap[fac.ID][subject.ID] && facultyDailyCount[dayName][fac.FacultyName] < 2 {
+							availableFaculty = append(availableFaculty, fac)
+						}
+					}
+
+					if len(availableFaculty) == 0 {
+						continue
+					}
+
+					selectedFaculty := availableFaculty[rand.Intn(len(availableFaculty))]
+					selectedClassroom := subjectClassrooms[subject.Name][0]
+
+					if !Available(existingTimetable, dayName, startTime, selectedFaculty.FacultyName) {
+						continue
+					}
+
+					entry := models.TimetableEntry{
+						DayName:      dayName,
+						StartTime:    startTime,
+						EndTime:      hour.EndTime,
+						SubjectName:  subject.Name,
+						FacultyName:  selectedFaculty.FacultyName,
+						Classroom:    selectedClassroom.ClassroomName,
+						Status:       subject.Status,
+						SemesterID:   selectedClassroom.SemesterID,
+						DepartmentID: departmentID,
+						AcademicYear: academicYearID,
+						CourseCode:   subject.CourseCode,
+						SectionID:    sectionID,
+					}
+
+					timetable[dayName][startTime] = append(timetable[dayName][startTime], entry)
+					periodsLeft[subject.Name]--
+					facultyDailyCount[dayName][selectedFaculty.FacultyName]++
+					subjectsAssigned[dayName][subject.Name] = true
+					facultyAssignments[dayName][selectedFaculty.FacultyName] = startTime
+
+					if subject.Status == 0 {
+						labAssigned[dayName] = true
+					}
+
+					assigned = true
+					break
+				}
+
+				if !assigned {
+					fmt.Printf("Unable to assign a subject for %s at %s\n", dayName, startTime)
+				}
+			}
+		}
+		allAssigned := true
+		for subjectName, remainingPeriods := range periodsLeft {
+			if remainingPeriods > 0 {
+				fmt.Printf("Warning: Subject %s has %d periods left unassigned.\n", subjectName, remainingPeriods)
+				allAssigned = false
+			}
+		}
+
+		if allAssigned && !CheckTimetableConflicts(timetable, existingTimetable) {
+			return timetable
+		}
+	}
 }
 
 // func GenerateTimetable(
@@ -242,211 +409,200 @@ func GenerateTimetable(
 // 	academicYearID int,
 // 	sectionID int) map[string]map[string][]models.TimetableEntry {
 
-	
 // 	existingTimetable, err := FetchExistingTimetable()
 // 	if err != nil {
 // 		fmt.Println("Error fetching existing timetable:", err)
 // 		return nil
 // 	}
 
-	
 // 	if len(existingTimetable) == 0 {
 // 		return generateRandomTimetable(daysCount, hours, subjects, faculty, classrooms, facultySubjects, section, semesters, departmentID, semesterID, academicYearID, sectionID)
 // 	}
 
 // }
-	// skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
-	// if err != nil {
-	// 	fmt.Println("Error fetching timetable skips:", err)
-	// 	return nil
-	// }
+// skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
+// if err != nil {
+// 	fmt.Println("Error fetching timetable skips:", err)
+// 	return nil
+// }
 
+// manualTimetable, err := FetchManualTimetable(departmentID, semesterID, academicYearID, sectionID)
+// if err != nil {
+// 	fmt.Println("Error fetching manual timetable:", err)
+// 	return nil
+// }
 
-	// manualTimetable, err := FetchManualTimetable(departmentID, semesterID, academicYearID, sectionID)
-	// if err != nil {
-	// 	fmt.Println("Error fetching manual timetable:", err)
-	// 	return nil
-	// }
+// subjectClassrooms := map[string][]models.Classroom{}
+// for _, subject := range subjects {
+// 	for _, cls := range classrooms {
+// 		if cls.DepartmentID == subject.DepartmentID {
+// 			subjectClassrooms[subject.Name] = append(subjectClassrooms[subject.Name], cls)
+// 		}
+// 	}
+// }
 
+// facultySubjectMap := map[int]map[int]bool{}
+// for _, fs := range facultySubjects {
+// 	if facultySubjectMap[fs.FacultyID] == nil {
+// 		facultySubjectMap[fs.FacultyID] = map[int]bool{}
+// 	}
+// 	facultySubjectMap[fs.FacultyID][fs.SubjectID] = true
+// }
 
-	// subjectClassrooms := map[string][]models.Classroom{}
-	// for _, subject := range subjects {
-	// 	for _, cls := range classrooms {
-	// 		if cls.DepartmentID == subject.DepartmentID {
-	// 			subjectClassrooms[subject.Name] = append(subjectClassrooms[subject.Name], cls)
-	// 		}
-	// 	}
-	// }
+// status0Assignments := make(map[string]map[string]bool)
+// labAssigned := make(map[string]bool)
 
+// for {
+// 	timetable := make(map[string]map[string][]models.TimetableEntry)
+// 	subjectsAssigned := make(map[string]map[string]bool)
+// 	periodsLeft := make(map[string]int)
 
-	// facultySubjectMap := map[int]map[int]bool{}
-	// for _, fs := range facultySubjects {
-	// 	if facultySubjectMap[fs.FacultyID] == nil {
-	// 		facultySubjectMap[fs.FacultyID] = map[int]bool{}
-	// 	}
-	// 	facultySubjectMap[fs.FacultyID][fs.SubjectID] = true
-	// }
+// 	facultyDailyCount := make(map[string]map[string]int)
 
+// 	for _, subject := range subjects {
+// 		periodsLeft[subject.Name] = subject.Period
+// 	}
 
-	// status0Assignments := make(map[string]map[string]bool) 
-	// labAssigned := make(map[string]bool)                 
+// 	facultyAssignments := make(map[string]map[string]string)
 
-	// for {
-	// 	timetable := make(map[string]map[string][]models.TimetableEntry)
-	// 	subjectsAssigned := make(map[string]map[string]bool)
-	// 	periodsLeft := make(map[string]int)
+// 	for _, day := range days {
+// 		timetable[day.DayName] = make(map[string][]models.TimetableEntry)
+// 		subjectsAssigned[day.DayName] = make(map[string]bool)
 
-	// 	facultyDailyCount := make(map[string]map[string]int)
+// 		facultyDailyCount[day.DayName] = make(map[string]int)
+// 		labAssigned[day.DayName] = false
 
-		
-	// 	for _, subject := range subjects {
-	// 		periodsLeft[subject.Name] = subject.Period
-	// 	}
+// 		facultyAssignments[day.DayName] = make(map[string]string)
 
-	
-	// 	facultyAssignments := make(map[string]map[string]string)
+// 		if skips, ok := skipTimetable[day.DayName]; ok {
+// 			for startTime, entries := range skips {
+// 				for _, entry := range entries {
+// 					timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
+// 					subjectsAssigned[day.DayName][entry.SubjectName] = true
+// 				}
+// 			}
+// 		}
 
+// 		if manualEntries, ok := manualTimetable[day.DayName]; ok {
+// 			for startTime, entries := range manualEntries {
+// 				for _, entry := range entries {
+// 					timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
+// 					subjectsAssigned[day.DayName][entry.SubjectName] = true
+// 					facultyDailyCount[day.DayName][entry.FacultyName]++
+// 					if entry.Status == 0 {
+// 						labAssigned[day.DayName] = true
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
 
-	// 	for _, day := range days {
-	// 		timetable[day.DayName] = make(map[string][]models.TimetableEntry)
-	// 		subjectsAssigned[day.DayName] = make(map[string]bool)
+// 	// Automatic generation for remaining periods...
+// 	rand.Seed(time.Now().UnixNano())
 
-	// 		facultyDailyCount[day.DayName] = make(map[string]int)
-	// 		labAssigned[day.DayName] = false
+// 	for _, day := range days {
+// 		for _, hour := range hours {
+// 			startTime := hour.StartTime
 
+// 			if len(timetable[day.DayName][startTime]) > 0 {
+// 				continue
+// 			}
 
-	// 		facultyAssignments[day.DayName] = make(map[string]string)
+// 			assigned := false
+// 			for attempts := 0; attempts < 1000; attempts++ {
 
-	
-	// 		if skips, ok := skipTimetable[day.DayName]; ok {
-	// 			for startTime, entries := range skips { 
-	// 				for _, entry := range entries {
-	// 					timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
-	// 					subjectsAssigned[day.DayName][entry.SubjectName] = true
-	// 				}
-	// 			}
-	// 		}
+// 				var filteredSubjects []models.Subject
+// 				for _, subject := range subjects {
+// 					if periodsLeft[subject.Name] > 0 && !subjectsAssigned[day.DayName][subject.Name] {
+// 						if subject.Status == 0 && labAssigned[day.DayName] {
+// 							continue
+// 						}
+// 						filteredSubjects = append(filteredSubjects, subject)
+// 					}
+// 				}
 
-	// 		if manualEntries, ok := manualTimetable[day.DayName]; ok {
-	// 			for startTime, entries := range manualEntries {
-	// 				for _, entry := range entries {
-	// 					timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
-	// 					subjectsAssigned[day.DayName][entry.SubjectName] = true
-	// 					facultyDailyCount[day.DayName][entry.FacultyName]++
-	// 					if entry.Status == 0 {
-	// 						labAssigned[day.DayName] = true
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
+// 				if len(filteredSubjects) == 0 {
+// 					break
+// 				}
 
-	// 	// Automatic generation for remaining periods...
-	// 	rand.Seed(time.Now().UnixNano())
+// 				subject := filteredSubjects[rand.Intn(len(filteredSubjects))]
 
-	// 	for _, day := range days {
-	// 		for _, hour := range hours {
-	// 			startTime := hour.StartTime
+// 				var availableFaculty []models.Faculty
+// 				for _, fac := range faculty {
+// 					if facultySubjectMap[fac.ID][subject.ID] && facultyDailyCount[day.DayName][fac.FacultyName] < 2 {
+// 						availableFaculty = append(availableFaculty, fac)
+// 					}
+// 				}
 
-	// 			if len(timetable[day.DayName][startTime]) > 0 {
-	// 				continue
-	// 			}
+// 				if len(availableFaculty) == 0 {
+// 					continue
+// 				}
 
-	// 			assigned := false
-	// 			for attempts := 0; attempts < 1000; attempts++ {
+// 				selectedFaculty := availableFaculty[rand.Intn(len(availableFaculty))]
 
-	// 				var filteredSubjects []models.Subject
-	// 				for _, subject := range subjects {
-	// 					if periodsLeft[subject.Name] > 0 && !subjectsAssigned[day.DayName][subject.Name] {
-	// 						if subject.Status == 0 && labAssigned[day.DayName] {
-	// 							continue
-	// 						}
-	// 						filteredSubjects = append(filteredSubjects, subject)
-	// 					}
-	// 				}
+// 				// Check if the faculty has already been assigned to this start time
+// 				if assignedClassroom, exists := facultyAssignments[day.DayName][selectedFaculty.FacultyName]; exists && assignedClassroom == startTime {
+// 					continue // Faculty is already assigned to this time slot
+// 				}
 
-	// 				if len(filteredSubjects) == 0 {
-	// 					break
-	// 				}
+// 				// Select a classroom
+// 				selectedClassroom := subjectClassrooms[subject.Name][0]
+// 				if !Available(existingTimetable, day.DayName, startTime, selectedFaculty.FacultyName) {
+// 					continue
+// 				}
 
-	// 				subject := filteredSubjects[rand.Intn(len(filteredSubjects))]
+// 				// Create the timetable entry
+// 				entry := models.TimetableEntry{
+// 					DayName:      day.DayName,
+// 					StartTime:    startTime,
+// 					EndTime:      hour.EndTime,
+// 					SubjectName:  subject.Name,
+// 					FacultyName:  selectedFaculty.FacultyName,
+// 					Classroom:    selectedClassroom.ClassroomName,
+// 					Status:       subject.Status,
+// 					SemesterID:   selectedClassroom.SemesterID,
+// 					DepartmentID: departmentID,
+// 					AcademicYear: academicYearID,
+// 					CourseCode:   subject.CourseCode,
+// 					SectionID:    sectionID,
+// 				}
 
-	// 				var availableFaculty []models.Faculty
-	// 				for _, fac := range faculty {
-	// 					if facultySubjectMap[fac.ID][subject.ID] && facultyDailyCount[day.DayName][fac.FacultyName] < 2 {
-	// 						availableFaculty = append(availableFaculty, fac)
-	// 					}
-	// 				}
+// 				// Assign and track period
+// 				timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
+// 				periodsLeft[subject.Name]--
+// 				facultyDailyCount[day.DayName][selectedFaculty.FacultyName]++
+// 				subjectsAssigned[day.DayName][subject.Name] = true
+// 				facultyAssignments[day.DayName][selectedFaculty.FacultyName] = startTime
 
-	// 				if len(availableFaculty) == 0 {
-	// 					continue
-	// 				}
+// 				// Track lab assignment if the subject is a lab (status 0)
+// 				if subject.Status == 0 {
+// 					status0Assignments[day.DayName][startTime] = true
+// 					labAssigned[day.DayName] = true
+// 				}
 
-	// 				selectedFaculty := availableFaculty[rand.Intn(len(availableFaculty))]
+// 				assigned = true
+// 				break
+// 			}
 
-	// 				// Check if the faculty has already been assigned to this start time
-	// 				if assignedClassroom, exists := facultyAssignments[day.DayName][selectedFaculty.FacultyName]; exists && assignedClassroom == startTime {
-	// 					continue // Faculty is already assigned to this time slot
-	// 				}
+// 			if !assigned {
+// 				fmt.Printf("Warning: Could not assign a subject for %s at %s\n", day.DayName, startTime)
+// 			}
+// 		}
+// 	}
 
-	// 				// Select a classroom
-	// 				selectedClassroom := subjectClassrooms[subject.Name][0]
-	// 				if !Available(existingTimetable, day.DayName, startTime, selectedFaculty.FacultyName) {
-	// 					continue
-	// 				}
+// 	// Ensure all periods are filled
+// 	allAssigned := true
+// 	for subjectName, remainingPeriods := range periodsLeft {
+// 		if remainingPeriods > 0 {
+// 			fmt.Printf("Warning: Subject %s has %d periods left unassigned.\n", subjectName, remainingPeriods)
+// 			allAssigned = false
+// 		}
+// 	}
 
-	// 				// Create the timetable entry
-	// 				entry := models.TimetableEntry{
-	// 					DayName:      day.DayName,
-	// 					StartTime:    startTime,
-	// 					EndTime:      hour.EndTime,
-	// 					SubjectName:  subject.Name,
-	// 					FacultyName:  selectedFaculty.FacultyName,
-	// 					Classroom:    selectedClassroom.ClassroomName,
-	// 					Status:       subject.Status,
-	// 					SemesterID:   selectedClassroom.SemesterID,
-	// 					DepartmentID: departmentID,
-	// 					AcademicYear: academicYearID,
-	// 					CourseCode:   subject.CourseCode,
-	// 					SectionID:    sectionID,
-	// 				}
-
-	// 				// Assign and track period
-	// 				timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
-	// 				periodsLeft[subject.Name]--
-	// 				facultyDailyCount[day.DayName][selectedFaculty.FacultyName]++
-	// 				subjectsAssigned[day.DayName][subject.Name] = true
-	// 				facultyAssignments[day.DayName][selectedFaculty.FacultyName] = startTime
-
-	// 				// Track lab assignment if the subject is a lab (status 0)
-	// 				if subject.Status == 0 {
-	// 					status0Assignments[day.DayName][startTime] = true
-	// 					labAssigned[day.DayName] = true
-	// 				}
-
-	// 				assigned = true
-	// 				break
-	// 			}
-
-	// 			if !assigned {
-	// 				fmt.Printf("Warning: Could not assign a subject for %s at %s\n", day.DayName, startTime)
-	// 			}
-	// 		}
-	// 	}
-
-	// 	// Ensure all periods are filled
-	// 	allAssigned := true
-	// 	for subjectName, remainingPeriods := range periodsLeft {
-	// 		if remainingPeriods > 0 {
-	// 			fmt.Printf("Warning: Subject %s has %d periods left unassigned.\n", subjectName, remainingPeriods)
-	// 			allAssigned = false
-	// 		}
-	// 	}
-
-	// 	if allAssigned && !CheckTimetableConflicts(timetable, existingTimetable) {
-	// 		return timetable
-	// 	}
-	// }
+// 	if allAssigned && !CheckTimetableConflicts(timetable, existingTimetable) {
+// 		return timetable
+// 	}
+// }
 
 // func generateRandomTimetable(
 // 	daysCount int,
@@ -683,299 +839,401 @@ func GenerateTimetable(
 // 	}
 // }
 
+//	func selectRandomClassroom(classrooms []models.Classroom) string {
+//		if len(classrooms) > 0 {
+//			return classrooms[rand.Intn(len(classrooms))].ClassroomName
+//		}
+//		return ""
+//	}
+//
+//	func selectRandomFaculty(facultyList []models.Faculty, subject models.Subject, facultySubjects []models.FacultySubject, departmentID int, semesterID int, academicYearID int, sectionID int) string {
+//		var availableFaculty []models.Faculty
+//		for _, fac := range facultyList {
+//			for _, fs := range facultySubjects {
+//				// Check if the faculty ID matches, and also check the additional criteria
+//				if fs.FacultyID == fac.ID && fs.SubjectID == subject.ID &&
+//					fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
+//					fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
+//					availableFaculty = append(availableFaculty, fac)
+//					break
+//				}
+//			}
+//		}
+//		if len(availableFaculty) > 0 {
+//			return availableFaculty[rand.Intn(len(availableFaculty))].FacultyName
+//		}
+//		return ""
+// //	}
+// func generateRandomTimetable(
+// 	workingDays []models.WorkingDay, // Valid working days to consider
+// 	hours []models.Hour,
+// 	subjects []models.Subject,
+// 	faculty []models.Faculty,
+// 	classrooms []models.Classroom,
+// 	facultySubjects []models.FacultySubject,
+// 	section []models.Section,
+// 	semesters []models.Semester,
+// 	departmentID int,
+// 	semesterID int,
+// 	academicYearID int,
+// 	sectionID int,
+// ) FacultyBasedTimetable {
+// 	log.Println("Academic Year ID:", academicYearID)
+
+// 	// Extract working days into a slice of strings
+// 	var days []string
+// 	for _, wd := range workingDays {
+// 		days = append(days, wd.WorkingDate.Format("2006-01-02")) // Use date in "YYYY-MM-DD" format
+// 	}
+
+// 	// Fetch timetable skips
+// 	skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
+// 	if err != nil {
+// 		fmt.Println("Error fetching timetable skips:", err)
+// 		return nil
+// 	}
+
+// 	// Fetch manual timetable
+// 	manualTimetable, err := FetchManualTimetable(departmentID, semesterID, academicYearID, sectionID)
+// 	if err != nil {
+// 		fmt.Println("Error fetching manual timetable:", err)
+// 		return nil
+// 	}
+
+// 	maxAttempts := len(subjects) * len(hours)
+
+// 	// Function to generate a single timetable
+// 	generate := func() FacultyBasedTimetable {
+// 		timetable := make(FacultyBasedTimetable)
+// 		subjectsAssigned := make(map[string]map[string]bool)
+// 		periodsLeft := make(map[string]int)
+// 		facultyDailyCount := make(map[string]map[string]int)
+
+// 		var nonLabSubjects []models.Subject
+// 		for _, subject := range subjects {
+// 			periodsLeft[subject.Name] = subject.Period
+// 			nonLabSubjects = append(nonLabSubjects, subject)
+// 		}
+
+// 		// Iterate over days and apply timetable skips and manual timetable entries.
+// 		for _, day := range days {
+// 			timetable[day] = make(map[string][]models.TimetableEntry)
+// 			subjectsAssigned[day] = make(map[string]bool)
+// 			facultyDailyCount[day] = make(map[string]int)
+
+// 			// Apply timetable skips
+// 			if skips, ok := skipTimetable[day]; ok {
+// 				for startTime, entries := range skips {
+// 					for _, entry := range entries {
+// 						timetable[day][startTime] = append(timetable[day][startTime], entry)
+// 						subjectsAssigned[day][entry.SubjectName] = true
+// 					}
+// 				}
+// 			}
+
+// 			// Apply manual timetable entries
+// 			if manualEntries, ok := manualTimetable[day]; ok {
+// 				for startTime, entries := range manualEntries {
+// 					for _, entry := range entries {
+// 						// Ensure you're not overwriting existing timetable entries
+// 						if len(timetable[day][startTime]) == 0 {
+// 							timetable[day][startTime] = append(timetable[day][startTime], entry)
+// 							subjectsAssigned[day][entry.SubjectName] = true
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		rand.Seed(time.Now().UnixNano())
+
+// 		// Generate timetable for non-lab subjects
+// 		for _, day := range days {
+// 			for i := 0; i < len(hours); i++ {
+// 				startTime := hours[i].StartTime
+// 				if len(timetable[day][startTime]) > 0 {
+// 					continue
+// 				}
+
+// 				for attempts := 0; attempts < maxAttempts; attempts++ {
+// 					// Filter eligible non-lab subjects
+// 					var filteredNonLabSubjects []models.Subject
+// 					for _, subject := range nonLabSubjects {
+// 						if periodsLeft[subject.Name] > 0 && !subjectsAssigned[day][subject.Name] {
+// 							filteredNonLabSubjects = append(filteredNonLabSubjects, subject)
+// 						}
+// 					}
+
+// 					if len(filteredNonLabSubjects) == 0 {
+// 						break
+// 					}
+
+// 					subject := filteredNonLabSubjects[rand.Intn(len(filteredNonLabSubjects))]
+
+// 					// Randomly select faculty and classroom
+// 					facultyName := selectRandomFaculty(faculty, subject, facultySubjects, departmentID, semesterID, academicYearID, sectionID)
+// 					if facultyName == "" || facultyDailyCount[day][facultyName] >= 1 {
+// 						continue
+// 					}
+
+// 					classroomName := selectRandomClassroom(classrooms)
+// 					if classroomName == "" {
+// 						continue
+// 					}
+
+// 					// Add timetable entry
+// 					entry := models.TimetableEntry{
+// 						DayName:      day,
+// 						StartTime:    startTime,
+// 						EndTime:      hours[i].EndTime,
+// 						SubjectName:  subject.Name,
+// 						FacultyName:  facultyName,
+// 						Classroom:    classroomName,
+// 						Status:       subject.Status,
+// 						SemesterID:   semesterID,
+// 						DepartmentID: departmentID,
+// 						AcademicYear: academicYearID,
+// 						CourseCode:   subject.CourseCode,
+// 						SectionID:    sectionID,
+// 					}
+
+// 					timetable[day][startTime] = append(timetable[day][startTime], entry)
+// 					periodsLeft[subject.Name]--
+// 					subjectsAssigned[day][subject.Name] = true
+// 					facultyDailyCount[day][facultyName]++
+// 					break
+// 				}
+// 			}
+// 		}
+
+// 		return timetable
+// 	}
+
+// 	// Keep generating until all periods are filled
+// 	for {
+// 		timetable := generate()
+// 		allPeriodsFilled := true
+// 		for _, day := range days {
+// 			for _, hour := range hours {
+// 				if len(timetable[day][hour.StartTime]) == 0 {
+// 					allPeriodsFilled = false
+// 					break
+// 				}
+// 			}
+// 		}
+// 		if allPeriodsFilled {
+// 			return timetable
+// 		}
+// 	}
+// }
+
 // func selectRandomClassroom(classrooms []models.Classroom) string {
 // 	if len(classrooms) > 0 {
 // 		return classrooms[rand.Intn(len(classrooms))].ClassroomName
 // 	}
 // 	return ""
 // }
-// func selectRandomFaculty(facultyList []models.Faculty, subject models.Subject, facultySubjects []models.FacultySubject, departmentID int, semesterID int, academicYearID int, sectionID int) string {
-// 	var availableFaculty []models.Faculty
-// 	for _, fac := range facultyList {
-// 		for _, fs := range facultySubjects {
-// 			// Check if the faculty ID matches, and also check the additional criteria
-// 			if fs.FacultyID == fac.ID && fs.SubjectID == subject.ID &&
-// 				fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
-// 				fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
-// 				availableFaculty = append(availableFaculty, fac)
-// 				break
-// 			}
-// 		}
-// 	}
-// 	if len(availableFaculty) > 0 {
-// 		return availableFaculty[rand.Intn(len(availableFaculty))].FacultyName
-// 	}
-// 	return ""
-// }
+
+//	func selectRandomFaculty(facultyList []models.Faculty, subject models.Subject, facultySubjects []models.FacultySubject, departmentID int, semesterID int, academicYearID int, sectionID int) string {
+//		var availableFaculty []models.Faculty
+//		for _, fac := range facultyList {
+//			for _, fs := range facultySubjects {
+//				if fs.FacultyID == fac.ID && fs.SubjectID == subject.ID &&
+//					fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
+//					fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
+//					availableFaculty = append(availableFaculty, fac)
+//					break
+//				}
+//			}
+//		}
+//		if len(availableFaculty) > 0 {
+//			return availableFaculty[rand.Intn(len(availableFaculty))].FacultyName
+//		}
+//		return ""
+//	}
 func generateRandomTimetable(
-    daysCount int, // Number of days to generate (e.g., 3 for Day1, Day2, Day3)
-    hours []models.Hour,
-    subjects []models.Subject,
-    faculty []models.Faculty,
-    classrooms []models.Classroom,
-    facultySubjects []models.FacultySubject,
-    section []models.Section,
-    semesters []models.Semester,
-    departmentID int,
-    semesterID int,
-    academicYearID int,
-    sectionID int,
+	workingDays []models.WorkingDay, // Valid working days to consider
+	hours []models.Hour,
+	subjects []models.Subject,
+	faculty []models.Faculty,
+	classrooms []models.Classroom,
+	facultySubjects []models.FacultySubject,
+	section []models.Section,
+	semesters []models.Semester,
+	departmentID int,
+	semesterID int,
+	academicYearID int,
+	sectionID int,
 ) FacultyBasedTimetable {
-    log.Println("Academic Year ID:", academicYearID)
+	log.Println("Academic Year ID:", academicYearID)
 
-    // Generate day names dynamically based on daysCount
-    var days []string
-    for i := 1; i <= daysCount; i++ {
-        days = append(days, fmt.Sprintf("Day %d", i))
-    }
+	// Extract working days into a slice of strings
+	var days []string
+	for _, wd := range workingDays {
+		days = append(days, wd.WorkingDate.Format("2006-01-02")) // Use date in "YYYY-MM-DD" format
+	}
 
-    // Fetch timetable skips
-    skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
-    if err != nil {
-        fmt.Println("Error fetching timetable skips:", err)
-        return nil
-    }
+	// Fetch timetable skips
+	skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
+	if err != nil {
+		fmt.Println("Error fetching timetable skips:", err)
+		return nil
+	}
 
-    // Fetch manual timetable
-    manualTimetable, err := FetchManualTimetable(departmentID, semesterID, academicYearID, sectionID)
-    if err != nil {
-        fmt.Println("Error fetching manual timetable:", err)
-        return nil
-    }
-	log.Println("Manual Timetable: ", manualTimetable)
+	// Fetch manual timetable
+	manualTimetable, err := FetchManualTimetable(departmentID, semesterID, academicYearID, sectionID)
+	if err != nil {
+		fmt.Println("Error fetching manual timetable:", err)
+		return nil
+	}
 
-    maxAttempts := len(subjects) * len(hours)
+	maxAttempts := len(subjects) * len(hours)
 
-    // Function to generate a single timetable
-    generate := func() FacultyBasedTimetable {
-        timetable := make(FacultyBasedTimetable)
-        subjectsAssigned := make(map[string]map[string]bool)
-        periodsLeft := make(map[string]int)
-        labSubjectAssigned := make(map[string]bool)
-        facultyDailyCount := make(map[string]map[string]int)
+	// Function to generate a single timetable
+	generate := func() FacultyBasedTimetable {
+		timetable := make(FacultyBasedTimetable)
+		subjectsAssigned := make(map[string]map[string]bool)
+		periodsLeft := make(map[string]int)
+		facultyDailyCount := make(map[string]map[string]int)
 
-        var labSubjects, nonLabSubjects []models.Subject
-        for _, subject := range subjects {
-            periodsLeft[subject.Name] = subject.Period
-            if subject.Status == 0 {
-                labSubjects = append(labSubjects, subject)
-            } else {
-                nonLabSubjects = append(nonLabSubjects, subject)
-            }
-        }
+		// Initialize periods left for subjects
+		for _, subject := range subjects {
+			periodsLeft[subject.Name] = subject.Period
+		}
 
-	// Iterate over days and apply timetable skips and manual timetable entries.
-for _, day := range days {
-    timetable[day] = make(map[string][]models.TimetableEntry)
-    subjectsAssigned[day] = make(map[string]bool)
-    labSubjectAssigned[day] = false
-    facultyDailyCount[day] = make(map[string]int)
+		// Iterate over days and apply timetable skips and manual timetable entries.
+		for _, day := range days {
+			timetable[day] = make(map[string][]models.TimetableEntry)
+			subjectsAssigned[day] = make(map[string]bool)
+			facultyDailyCount[day] = make(map[string]int)
 
-    // Apply timetable skips
-    if skips, ok := skipTimetable[day]; ok {
-        for startTime, entries := range skips {
-            for _, entry := range entries {
-               
-                    timetable[day][startTime] = append(timetable[day][startTime], entry)
-                    subjectsAssigned[day][entry.SubjectName] = true
-                
-            }
-        }
-    }
+			// Apply timetable skips
+			if skips, ok := skipTimetable[day]; ok {
+				for startTime, entries := range skips {
+					for _, entry := range entries {
+						timetable[day][startTime] = append(timetable[day][startTime], entry)
+						subjectsAssigned[day][entry.SubjectName] = true
+					}
+				}
+			}
 
-    // Apply manual timetable entries
-    if manualEntries, ok := manualTimetable[day]; ok {
-        for startTime, entries := range manualEntries {
-            for _, entry := range entries {
-                // Ensure you're not overwriting existing timetable entries
-                if len(timetable[day][startTime]) == 0 {
-                    timetable[day][startTime] = append(timetable[day][startTime], entry)
-                    subjectsAssigned[day][entry.SubjectName] = true
-                }
-            }
-        }
-    }
-}
+			// Apply manual timetable entries
+			if manualEntries, ok := manualTimetable[day]; ok {
+				for startTime, entries := range manualEntries {
+					for _, entry := range entries {
+						// Ensure you're not overwriting existing timetable entries
+						if len(timetable[day][startTime]) == 0 {
+							timetable[day][startTime] = append(timetable[day][startTime], entry)
+							subjectsAssigned[day][entry.SubjectName] = true
+						}
+					}
+				}
+			}
+		}
 
-		
-        rand.Seed(time.Now().UnixNano())
+		rand.Seed(time.Now().UnixNano())
 
-        // Generate timetable for lab subjects first
-        for _, day := range days {
-            for i := 0; i < len(hours); i++ {
-                startTime := hours[i].StartTime
-                if len(timetable[day][startTime]) > 0 {
-                    continue
-                }
+		// Generate timetable for non-lab subjects
+		for _, day := range days {
+			for i := 0; i < len(hours); i++ {
+				startTime := hours[i].StartTime
+				if len(timetable[day][startTime]) > 0 {
+					continue
+				}
 
-                for attempts := 0; attempts < maxAttempts; attempts++ {
-                    // Filter eligible lab subjects
-                    var filteredLabSubjects []models.Subject
-                    for _, subject := range labSubjects {
-                        if periodsLeft[subject.Name] > 0 && !subjectsAssigned[day][subject.Name] && !labSubjectAssigned[day] {
-                            filteredLabSubjects = append(filteredLabSubjects, subject)
-                        }
-                    }
+				for attempts := 0; attempts < maxAttempts; attempts++ {
+					// Filter eligible subjects
+					var filteredSubjects []models.Subject
+					for _, subject := range subjects {
+						if periodsLeft[subject.Name] > 0 && !subjectsAssigned[day][subject.Name] {
+							filteredSubjects = append(filteredSubjects, subject)
+						}
+					}
 
-                    if len(filteredLabSubjects) == 0 {
-                        break
-                    }
+					if len(filteredSubjects) == 0 {
+						break
+					}
 
-                    subject := filteredLabSubjects[rand.Intn(len(filteredLabSubjects))]
+					subject := filteredSubjects[rand.Intn(len(filteredSubjects))]
 
-                    // Assign lab subjects in two consecutive periods
-                    if i < len(hours)-1 {
-                        nextStartTime := hours[i+1].StartTime
+					// Randomly select faculty and classroom
+					facultyName := selectRandomFaculty(faculty, subject, facultySubjects, departmentID, semesterID, academicYearID, sectionID)
+					if facultyName == "" || facultyDailyCount[day][facultyName] >= 1 {
+						continue
+					}
 
-                        // Randomly select faculty and classroom
-                        facultyName := selectRandomFaculty(faculty, subject, facultySubjects, departmentID, semesterID, academicYearID, sectionID)
-                        if facultyName == "" || facultyDailyCount[day][facultyName] >= 2 {
-                            continue
-                        }
+					classroomName := selectRandomClassroom(classrooms)
+					if classroomName == "" {
+						continue
+					}
 
-                        classroomName := selectRandomClassroom(classrooms)
-                        if classroomName == "" {
-                            continue
-                        }
+					// Add timetable entry
+					entry := models.TimetableEntry{
+						DayName:      day,
+						StartTime:    startTime,
+						EndTime:      hours[i].EndTime,
+						SubjectName:  subject.Name,
+						FacultyName:  facultyName,
+						Classroom:    classroomName,
+						Status:       subject.Status,
+						SemesterID:   semesterID,
+						DepartmentID: departmentID,
+						AcademicYear: academicYearID,
+						CourseCode:   subject.CourseCode,
+						SectionID:    sectionID,
+					}
 
-                        // Create timetable entries
-                        entry1 := models.TimetableEntry{
-                            DayName:      day,
-                            StartTime:    startTime,
-                            EndTime:      hours[i].EndTime,
-                            SubjectName:  subject.Name,
-                            FacultyName:  facultyName,
-                            Classroom:    classroomName,
-                            Status:       subject.Status,
-                            SemesterID:   semesterID,
-                            DepartmentID: departmentID,
-                            AcademicYear: academicYearID,
-                            CourseCode:   subject.CourseCode,
-                            SectionID:    sectionID,
-                        }
-                        entry2 := entry1
-                        entry2.StartTime = nextStartTime
-                        entry2.EndTime = hours[i+1].EndTime
+					timetable[day][startTime] = append(timetable[day][startTime], entry)
+					periodsLeft[subject.Name]--
+					subjectsAssigned[day][subject.Name] = true
+					facultyDailyCount[day][facultyName]++
+					break
+				}
+			}
+		}
 
-                        // Add entries
-                        timetable[day][startTime] = append(timetable[day][startTime], entry1)
-                        timetable[day][nextStartTime] = append(timetable[day][nextStartTime], entry2)
+		return timetable
+	}
 
-                        // Update assignment tracking
-                        periodsLeft[subject.Name] -= 2
-                        subjectsAssigned[day][subject.Name] = true
-                        labSubjectAssigned[day] = true
-                        facultyDailyCount[day][facultyName] += 2
-                        break
-                    }
-                }
-            }
-        }
-
-        // Generate timetable for non-lab subjects
-        for _, day := range days {
-            for i := 0; i < len(hours); i++ {
-                startTime := hours[i].StartTime
-                if len(timetable[day][startTime]) > 0 {
-                    continue
-                }
-
-                for attempts := 0; attempts < maxAttempts; attempts++ {
-                    // Filter eligible non-lab subjects
-                    var filteredNonLabSubjects []models.Subject
-                    for _, subject := range nonLabSubjects {
-                        if periodsLeft[subject.Name] > 0 && !subjectsAssigned[day][subject.Name] {
-                            filteredNonLabSubjects = append(filteredNonLabSubjects, subject)
-                        }
-                    }
-
-                    if len(filteredNonLabSubjects) == 0 {
-                        break
-                    }
-
-                    subject := filteredNonLabSubjects[rand.Intn(len(filteredNonLabSubjects))]
-
-                    // Randomly select faculty and classroom
-                    facultyName := selectRandomFaculty(faculty, subject, facultySubjects, departmentID, semesterID, academicYearID, sectionID)
-                    if facultyName == "" || facultyDailyCount[day][facultyName] >= 1 {
-                        continue
-                    }
-
-                    classroomName := selectRandomClassroom(classrooms)
-                    if classroomName == "" {
-                        continue
-                    }
-
-                    // Add timetable entry
-                    entry := models.TimetableEntry{
-                        DayName:      day,
-                        StartTime:    startTime,
-                        EndTime:      hours[i].EndTime,
-                        SubjectName:  subject.Name,
-                        FacultyName:  facultyName,
-                        Classroom:    classroomName,
-                        Status:       subject.Status,
-                        SemesterID:   semesterID,
-                        DepartmentID: departmentID,
-                        AcademicYear: academicYearID,
-                        CourseCode:   subject.CourseCode,
-                        SectionID:    sectionID,
-                    }
-
-                    timetable[day][startTime] = append(timetable[day][startTime], entry)
-                    periodsLeft[subject.Name]--
-                    subjectsAssigned[day][subject.Name] = true
-                    facultyDailyCount[day][facultyName]++
-                    break
-                }
-            }
-        }
-
-        return timetable
-    }
-
-    // Keep generating until all periods are filled
-    for {
-        timetable := generate()
-        allPeriodsFilled := true
-        for _, day := range days {
-            for _, hour := range hours {
-                if len(timetable[day][hour.StartTime]) == 0 {
-                    allPeriodsFilled = false
-                    break
-                }
-            }
-            if !allPeriodsFilled {
-                break
-            }
-        }
-        if allPeriodsFilled {
-            return timetable
-        }
-    }
+	// Keep generating until all periods are filled
+	for {
+		timetable := generate()
+		allPeriodsFilled := true
+		for _, day := range days {
+			for _, hour := range hours {
+				if len(timetable[day][hour.StartTime]) == 0 {
+					allPeriodsFilled = false
+					break
+				}
+			}
+		}
+		if allPeriodsFilled {
+			return timetable
+		}
+	}
 }
 
 func selectRandomClassroom(classrooms []models.Classroom) string {
-    if len(classrooms) > 0 {
-        return classrooms[rand.Intn(len(classrooms))].ClassroomName
-    }
-    return ""
+	if len(classrooms) > 0 {
+		return classrooms[rand.Intn(len(classrooms))].ClassroomName
+	}
+	return ""
 }
 
 func selectRandomFaculty(facultyList []models.Faculty, subject models.Subject, facultySubjects []models.FacultySubject, departmentID int, semesterID int, academicYearID int, sectionID int) string {
-    var availableFaculty []models.Faculty
-    for _, fac := range facultyList {
-        for _, fs := range facultySubjects {
-            if fs.FacultyID == fac.ID && fs.SubjectID == subject.ID &&
-                fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
-                fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
-                availableFaculty = append(availableFaculty, fac)
-                break
-            }
-        }
-    }
-    if len(availableFaculty) > 0 {
-        return availableFaculty[rand.Intn(len(availableFaculty))].FacultyName
-    }
-    return ""
+	var availableFaculty []models.Faculty
+	for _, fac := range facultyList {
+		for _, fs := range facultySubjects {
+			if fs.FacultyID == fac.ID && fs.SubjectID == subject.ID &&
+				fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
+				fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
+				availableFaculty = append(availableFaculty, fac)
+				break
+			}
+		}
+	}
+	if len(availableFaculty) > 0 {
+		return availableFaculty[rand.Intn(len(availableFaculty))].FacultyName
+	}
+	return ""
 }

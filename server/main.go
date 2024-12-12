@@ -30,7 +30,7 @@ func main() {
 	}))
 
 	r.POST("/login", auth.Login)
-	r.GET("/timetable/:departmentID/:semesterId/:academicYearID/:sectionID/:daysCount", routes.GenerateTimetable)
+	r.GET("/timetable/:departmentID/:semesterId/:academicYearID/:sectionID/:startdate/:enddate", routes.GenerateTimetable)
 	r.POST("/timetable/save", timetables.SaveTimetable)
 	r.GET("/timetable/saved/:departmentID/:semesterId/:academicYearID/:sectionID", timetables.GetTimetable)
 	r.GET("/timetable/faculty/:faculty_name/:academicYearID", timetables.FacultyTimetable)
@@ -65,7 +65,7 @@ func main() {
 	r.GET("/subjectoptions", timetables.SubjectOptions)
 	r.GET("/subjectTypeoptions", timetables.SubjectTypeOptions)
 	r.GET("/classroomavailabletimings/:academicYearID/:facultyName/:day/:classroomName", timetables.GetAvailableTimingsForFacultyAndClassroom)
-
+	r.GET("/workingDayoptions", timetables.WorkingDayOptions)
 	r.GET("/course-code", timetables.CourseCodeOptions)
 	r.POST("/labentry", labentry.LabEntry)
 	r.Run(":8080")

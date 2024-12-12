@@ -1,7 +1,10 @@
 package models
 
+import "time"
 
-
+type WorkingDay struct {
+	WorkingDate time.Time `json:"working_date"`
+}
 
 type Day struct {
 	ID      int    `json:"id"`
@@ -184,14 +187,13 @@ type AcademicYear struct {
 }
 type VenueTimetable struct {
 	DayName     string `json:"day_name"`
-	StartTime   string `json:"start_time"`   // Scanning start_time as string
-    EndTime     string `json:"end_time"`   
+	StartTime   string `json:"start_time"` // Scanning start_time as string
+	EndTime     string `json:"end_time"`
 	SubjectName string `json:"subject_name"`
 	FacultyName string `json:"faculty_name"`
 	SemesterID  int    `json:"semester_id"`
-	Department string `json:"department_name"`
-    SectionName string `json:"section_name"`
-	
+	Department  string `json:"department_name"`
+	SectionName string `json:"section_name"`
 }
 type Student struct {
 	StudentName string `json:"Student Name"`
