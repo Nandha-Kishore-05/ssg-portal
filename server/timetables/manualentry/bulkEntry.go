@@ -1,80 +1,186 @@
 package manualentry
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"ssg-portal/config"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-type TimetableEntry struct {
-	DepartmentID int    `json:"department_id"`
-	FacultyName  string `json:"faculty_name"`
-	SubjectName  string `json:"subject_name"`
-	CourseCode   string `json:"course_code"`
-	SectionID    int    `json:"section_id"`
-	Classroom    string `json:"classroom"`
-	SemesterID   int    `json:"semester_id"`
-	AcademicYear int    `json:"academic_year"`
-	Hour         string `json:"hour"`
-	// ... other fields if needed
+type BulkEntry struct {
+	DayName        string   `json:"day_name"`
+	Period         []int    `json:"period"`
+	Classroom      string   `json:"classroom"`
+	SemesterID     int      `json:"semester_id"`
+	DepartmentName []string `json:"department_name"`
+	SubjectName    string   `json:"subject_name"`
+	FacultyName    string   `json:"faculty_name"`
+	SubjectType    string   `json:"subject_type"`
+	AcademicYear   int      `json:"academic_year"`
+	CourseCode     string   `json:"course_code"`
+	SectionName    string   `json:"section"`
 }
 
-func BulkEntry(c *gin.Context) {
-	var entries []TimetableEntry
-	err := c.BindJSON(&entries)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func BulkInsert(c *gin.Context) {
+	var payload struct {
+		Entries []BulkEntry `json:"entries"`
+	}
+
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
-	tx, err := config.Database.Begin()
+	query := `INSERT INTO timetable_skips (day_name, start_time, end_time, classroom, semester_id, department_id, subject_name, faculty_name, status, academic_year, course_code, section_id) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	stmt, err := config.Database.Prepare(query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to prepare SQL statement"})
 		return
 	}
+	defer stmt.Close()
 
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("%v", r)})
-		} else if err != nil {
-			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		} else {
-			tx.Commit()
-			c.JSON(http.StatusOK, gin.H{"message": "Data inserted successfully!"})
-		}
-	}()
+	for _, entry := range payload.Entries {
+		for _, department := range entry.DepartmentName {
+			departmentID, err := getDepartmentID(department)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch department ID for department: " + department})
+				return
+			}
 
-	for _, entry := range entries {
-		startTime, endTime := parseHour(entry.Hour)
+			sectionID, err := getSectionID(entry.SectionName)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch section ID for section: " + entry.SectionName})
+				return
+			}
 
-		// Prepare and execute the SQL statement within the transaction
-		_, err := tx.Exec("INSERT INTO manual_timetable (department_id, faculty_name, subject_name, course_code, section_id, classroom, semester_id, academic_year, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-			entry.DepartmentID, entry.FacultyName, entry.SubjectName, entry.CourseCode, entry.SectionID, entry.Classroom, entry.SemesterID, entry.AcademicYear, startTime, endTime)
-		if err != nil {
-			return
+			status, err := getStatusFromSubjectType(entry.SubjectType)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid subject type: " + entry.SubjectType})
+				return
+			}
+
+			for _, period := range entry.Period {
+				periodSlots, err := getDynamicPeriodSlots(period)
+				if err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid period: %d", period)})
+					return
+				}
+
+				for _, slot := range periodSlots {
+					_, err = stmt.Exec(
+						entry.DayName,
+						slot.StartTime,
+						slot.EndTime,
+						entry.Classroom,
+						entry.SemesterID,
+						departmentID,
+						entry.SubjectName,
+						entry.FacultyName,
+						status,
+						entry.AcademicYear,
+						entry.CourseCode,
+						sectionID,
+					)
+					if err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert data into the database"})
+						return
+					}
+				}
+			}
 		}
 	}
+	c.JSON(http.StatusOK, gin.H{"message": "Bulk insert successful"})
 }
-func parseHour(hour string) (string, string) {
-	switch hour {
-	case "PERIOD 1":
-		return "08:45:00", "09:35:00"
-	case "PERIOD 2":
-		return "09:35:00", "10:25:00"
-	case "PERIOD 3":
-		return "10:40:00", "11:30:00"
-	case "PERIOD 4":
-		return "13:45:00", "14:35:00"
-	case "PERIOD 5":
-		return "14:35:00", "15:25:00"
-	case "PERIOD 6":
-		return "15:40:00", "16:30:00"
-	// Default case to handle periods outside the defined range
-	default:
-		return "", "" // Or return a specific error message
+
+// Helper function to split and trim a comma-separated string
+// func splitAndTrim(input string) []string {
+// 	var result []string
+// 	items := strings.Split(input, ",")
+// 	for _, item := range items {
+// 		trimmed := strings.TrimSpace(item)
+// 		if trimmed != "" {
+// 			result = append(result, trimmed)
+// 		}
+// 	}
+// 	return result
+// }
+
+// getDynamicPeriodSlots dynamically generates start and end times for the given period(s).
+func getDynamicPeriodSlots(periods int) ([]struct{ StartTime, EndTime string }, error) {
+	periodTimes := map[int][2]string{
+		1: {"08:45:00", "09:35:00"},
+		2: {"09:35:00", "10:25:00"},
+		3: {"10:40:00", "11:30:00"},
+		4: {"13:45:00", "14:35:00"},
+		5: {"14:35:00", "15:25:00"},
+		6: {"15:40:00", "16:30:00"},
 	}
+
+	// Assume "periods" is a bitmask or list of selected periods (e.g., [3, 4])
+	var slots []struct{ StartTime, EndTime string }
+
+	// Example: Handle single periods or ranges dynamically
+	if times, exists := periodTimes[periods]; exists {
+		// Single period
+		slots = append(slots, struct{ StartTime, EndTime string }{times[0], times[1]})
+	} else {
+		// Handle multiple or range periods
+		for period, times := range periodTimes {
+			if period <= periods {
+				slots = append(slots, struct{ StartTime, EndTime string }{times[0], times[1]})
+			}
+		}
+	}
+
+	if len(slots) == 0 {
+		return nil, fmt.Errorf("no valid time slots found for periods: %d", periods)
+	}
+
+	return slots, nil
+}
+
+func getDepartmentID(departmentName string) (int, error) {
+	var departmentID int
+	query := "SELECT id FROM departments WHERE name = ?"
+	err := config.Database.QueryRow(query, departmentName).Scan(&departmentID)
+	if err == sql.ErrNoRows {
+		return 0, sql.ErrNoRows
+	} else if err != nil {
+		return 0, err
+	}
+	return departmentID, nil
+}
+
+func getSectionID(sectionName string) (int, error) {
+	var sectionID int
+	query := "SELECT id FROM master_section WHERE section_name = ?"
+	err := config.Database.QueryRow(query, sectionName).Scan(&sectionID)
+	if err != nil {
+		return 0, err
+	}
+	return sectionID, nil
+}
+func getStatusFromSubjectType(subjectType string) (int, error) {
+	subjectTypeMap := map[string]int{
+		"Lab Subject":     1,
+		"Non Lab Subject": 2,
+		"Elective 3":      3,
+		"Elective 4":      4,
+		"Elective 5":      5,
+		"Open Elective":   6,
+		"Add On Course":   7,
+		"Honor":           8,
+		"Minor":           9,
+		"Elective 1":      10,
+	}
+
+	status, exists := subjectTypeMap[subjectType]
+	if !exists {
+		return 0, fmt.Errorf("unknown subject type: %s", subjectType)
+	}
+	return status, nil
 }

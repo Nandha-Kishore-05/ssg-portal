@@ -68,5 +68,7 @@ func main() {
 	r.GET("/workingDayoptions", timetables.WorkingDayOptions)
 	r.GET("/course-code", timetables.CourseCodeOptions)
 	r.POST("/labentry", labentry.LabEntry)
+	r.POST("/manual/bulksubmit", manualentry.BulkInsert)
 	r.Run(":8080")
+
 }

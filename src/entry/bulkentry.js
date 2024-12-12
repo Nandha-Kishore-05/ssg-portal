@@ -111,43 +111,40 @@ const Bulkentry = () => {
   };
   const sendDataToBackend = () => {
     const jsonData = parseExcelToJson(); // Replace with your function to parse Excel data.
-  
+
     const formattedData = {
-      entries: jsonData.map(entry => {
-        const formattedEntry = {
-          semester: semester ? semester.value : null,
-      academicYear: academicYear ? academicYear.value : null,
-          department_name: (entry["Department"] || "").trim().toUpperCase(),
-          faculty_name: (entry["Faculty Name"] || "").trim(),
-          subject_name: (entry["Course Name"] || "").trim(),
-          course_code: (entry["Course Code"] || "").trim(),
-          section: (entry["Section"] || "").trim(),
-          subject_type: (entry["Subject Type"] || "").trim(),
-          classroom: (entry["VENUE"] || "").trim().toUpperCase(),
-          hour: (entry["HOUR"] || "").trim(),
-          date: entry["DATE"] ? new Date(entry["DATE"]).toISOString().split("T")[0] : null, // Convert DATE to YYYY-MM-DD
-        };
-  
-        return formattedEntry;
-      }),
+        entries: jsonData.map(entry => ({
+            day_name: entry["DAY"] ? entry["DAY"].trim().toUpperCase() : "",
+            period: entry["PERIOD"] ? entry["PERIOD"].trim().split(",").map(Number) : [],
+            classroom: entry["VENUE"] ? entry["VENUE"].trim().toUpperCase() : "",
+            semester_id: semester ? semester.value : null,
+            department_name: entry["Department"] ? entry["Department"].trim().toUpperCase().split(",") : [],
+            subject_name: entry["Course Name"] ? entry["Course Name"].trim() : "",
+            faculty_name: entry["Faculty Name"] ? entry["Faculty Name"].trim() : "",
+            subject_type: entry["Subject Type"] ? entry["Subject Type"].trim() : "",
+            academic_year: academicYear ? academicYear.value : null,
+            course_code: entry["Course Code"] ? entry["Course Code"].trim() : "",
+            section: entry["Section"] ? entry["Section"].trim() : "",
+        }))
     };
-  
+
     axios.post('http://localhost:8080/manual/bulksubmit', formattedData, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+        headers: {
+            'Content-Type': 'application/json',
+        },
     })
-      .then(response => {
+    .then(response => {
         console.log("Server response:", response);
         setSuccessMessage("Data uploaded successfully!");
         setOpenModal(true);
-      })
-      .catch(error => {
+    })
+    .catch(error => {
         console.error("Error uploading data:", error.response ? error.response.data : error.message);
         setSuccessMessage("Failed to upload data. Please try again.");
         setOpenModal(true);
-      });
-  };
+    });
+};
+
   
   
   
@@ -188,7 +185,7 @@ const Bulkentry = () => {
                 onChange={setSemester}
                 options={filteredSemOptions} // Use filtered options here
               />
-             
+           
               <button
                 className="student-upload-button"
                 onClick={() => document.querySelector('.file-upload-input').click()}
