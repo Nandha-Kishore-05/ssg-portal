@@ -22,7 +22,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{"http://localhost:3005"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -69,7 +69,7 @@ func main() {
 	r.GET("/course-code", timetables.CourseCodeOptions)
 	r.POST("/labentry", labentry.LabEntry)
 	r.POST("/manual/bulksubmit", manualentry.BulkInsert)
-	r.POST("/upload", timetables.HandleExcelUpload)
+	r.POST("/upload-lab", timetables.HandleExcelUpload)
 	r.Run(":8080")
 
 }

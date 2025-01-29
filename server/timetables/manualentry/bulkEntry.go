@@ -96,17 +96,15 @@ func BulkInsert(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Bulk insert successful"})
 }
 
-
-
 // getDynamicPeriodSlots dynamically generates start and end times for the given period(s).
 func getDynamicPeriodSlots(periods int) ([]struct{ StartTime, EndTime string }, error) {
 	periodTimes := map[int][2]string{
 		1: {"08:45:00", "09:35:00"},
 		2: {"09:35:00", "10:25:00"},
 		3: {"10:40:00", "11:30:00"},
-		4: {"13:45:00", "14:35:00"},
-		5: {"14:35:00", "15:25:00"},
-		6: {"15:40:00", "16:30:00"},
+		4: {"11:30:00", "12:20:00"},
+		5: {"13:30:00", "14:20:00"},
+		6: {"14:20:00", "15:10:00"},
 	}
 
 	// Assume "periods" is a bitmask or list of selected periods (e.g., [3, 4])

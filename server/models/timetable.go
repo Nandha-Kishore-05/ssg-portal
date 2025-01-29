@@ -15,6 +15,7 @@ type Hour struct {
 	ID        int    `json:"id"`
 	StartTime string `json:"start_time"`
 	EndTime   string `json:"end_time"`
+	Value     string
 }
 
 type Subject struct {
@@ -25,10 +26,12 @@ type Subject struct {
 	Status       int    `json:"status"`
 	SemesterID   int    `json:"semester_id"`
 	CourseCode   string `json:"course_code"`
+	SectionID       int    `json:"section_id"`
 }
 type Section struct {
 	ID          int    `json:"id"`
 	SectionName string `json:"section_name"`
+	DepartmentID    int    `json:"department_id"`
 }
 type Faculty struct {
 	ID           int    `json:"id"`
@@ -45,6 +48,7 @@ type Classroom struct {
 	AcademicYear  int    `json:"academic_year_id"`
 	SectionID     int    `json:"section_id"`
 	Status        int    `json:"status"`
+	LabVenue  string `json:"lab_name"`
 }
 
 type FacultySubject struct {
@@ -74,6 +78,8 @@ type TimetableEntry struct {
 	AcademicYear    int    `json:"academic_year_id"`
 	CourseCode      string `json:"course_code"`
 	SectionID       int    `json:"section_id"`
+	LabVenue  string `json:"lab_name"`
+	
 }
 type Class struct {
 	Day          string `json:"day_name"`
@@ -238,4 +244,6 @@ type LabVenue struct {
 	ID        int    `json:"id"`
 	LabVenue  string `json:"lab_name"`
 	SubjectID int    `json:"subject_id"`
+	SemesterID    int    `json:"semester_id"`
+	DepartmentID   int    `json:"department_id"`
 }

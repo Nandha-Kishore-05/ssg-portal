@@ -77,7 +77,7 @@ const Timetable = (props) => {
               subjects.forEach(subject => {
                 allDays.add(subject.day_name);
                 allTimes.add(`${subject.start_time} - ${subject.end_time}`);
-                classrooms.add(subject.classroom);
+                classrooms.add(subject.classroom );
               });
             } else {
               console.warn('Subjects is not an array for day:', day, subjects);
@@ -136,19 +136,22 @@ const Timetable = (props) => {
         );
 
         entries.forEach(entry => {
+          console.log(entry.lab_name)
           const data = {
             day_name: entry.day_name,
             start_time: entry.start_time,
             end_time: entry.end_time,
             subject_name: entry.subject_name,
             faculty_name: entry.faculty_name,
-            classroom: entry.classroom,
+            classroom: entry.classroom || entry.lab_name,
             status: entry.status,
             semester_id: entry.semester_id,
             department_id: entry.department_id,
             academic_year_id : entry.academic_year_id,
             course_code: entry.course_code,
-            section_id : entry.section_id
+            section_id : entry.section_id,
+           
+ 
           };
           timetableData.push(data);
         });
@@ -273,7 +276,7 @@ const Timetable = (props) => {
                         <div key={idx} className="subject">
                           <div>{item.subject_name}</div>
                           <div>{item.faculty_name}</div>
-                          <div>{item.classroom}</div>
+                          <div>{item.classroom}  {item.lab_name}</div>
                         </div>
                       ))}
                     </td>

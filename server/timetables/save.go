@@ -1,6 +1,7 @@
 package timetables
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,7 @@ func SaveTimetable(c *gin.Context) {
 	defer stmt.Close()
 
 	for _, entry := range entries {
+		log.Println("classroom :",entry.Classroom)
 		_, err := stmt.Exec(
 			entry.DayName,
 			entry.StartTime,
