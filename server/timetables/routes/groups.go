@@ -144,7 +144,7 @@ func GenerateTimetable(c *gin.Context) {
 	sectionIDStr := c.Param("sectionID")
 	startDateStr := c.Param("startdate")
 	endDateStr := c.Param("enddate")
-
+	log.Println("API ENTERED")
 	// Convert input strings to integers
 	departmentID, err := strconv.Atoi(departmentIDStr)
 	if err != nil {

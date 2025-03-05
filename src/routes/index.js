@@ -57,7 +57,7 @@ const routes = [
 
   {
     path: "/manualentry",
-    element: <Bulkentry />,
+    element: <ManualEntry />,
   },
   {
     path: "/subjectallocation",

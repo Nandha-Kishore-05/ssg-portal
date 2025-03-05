@@ -10,12 +10,36 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
 )
-
 func Masterdownload(c *gin.Context) {
 	academicYearID := c.Param("academic_year_id")
 
 	if academicYearID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid academic year parameter"})
+		return
+	}
+
+	// Fetch distinct days dynamically
+	dayQuery := `SELECT DISTINCT day_name FROM timetable WHERE academic_year = ? ORDER BY STR_TO_DATE(day_name, '%Y-%m-%d')`
+	dayRows, err := config.Database.Query(dayQuery, academicYearID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch timetable dates: " + err.Error()})
+		return
+	}
+	defer dayRows.Close()
+
+	var days []string
+	for dayRows.Next() {
+		var day string
+		if err := dayRows.Scan(&day); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error scanning timetable dates: " + err.Error()})
+			return
+		}
+		days = append(days, day)
+	}
+
+	// Ensure that the `days` array is not empty
+	if len(days) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No timetable data found for the given academic year"})
 		return
 	}
 
@@ -59,11 +83,11 @@ func Masterdownload(c *gin.Context) {
 		"08:45:00 - 09:35:00",
 		"09:35:00 - 10:25:00",
 		"10:40:00 - 11:30:00",
-		"13:45:00 - 14:35:00",
-		"14:35:00 - 15:25:00",
-		"15:40:00 - 16:30:00",
+		"11:30:00 - 12:20:00",
+		"13:30:00 - 14:20:00",
+		"14:20:00 - 15:10:00",
+		"15:25:00 - 16:30:00",
 	}
-	days := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 
 	departmentData := make(map[string]map[string]map[string]map[string]map[string][]string)
 
@@ -88,7 +112,6 @@ func Masterdownload(c *gin.Context) {
 		if _, exists := departmentData[deptName][semesterID][section][dayName]; !exists {
 			departmentData[deptName][semesterID][section][dayName] = make(map[string][]string)
 		}
-		// Combine subject and faculty information in the same cell for the same time slot
 		departmentData[deptName][semesterID][section][dayName][timeSlot] = append(
 			departmentData[deptName][semesterID][section][dayName][timeSlot],
 			fmt.Sprintf("%s\n%s", subjectName, facultyName),
@@ -135,16 +158,6 @@ func Masterdownload(c *gin.Context) {
 			}
 			rowOffset++
 
-			for sectionIndex := range columns {
-				startCol := 2 + sectionIndex*len(timeSlots)
-				for j, timeSlot := range timeSlots {
-					col, _ := excelize.ColumnNumberToName(startCol + j)
-					f.SetCellValue(sheetName, fmt.Sprintf("%s%d", col, rowOffset), timeSlot)
-					f.SetCellStyle(sheetName, fmt.Sprintf("%s%d", col, rowOffset), fmt.Sprintf("%s%d", col, rowOffset), centeredStyle)
-				}
-			}
-			rowOffset++
-
 			for _, day := range days {
 				f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowOffset), day)
 				f.SetCellStyle(sheetName, fmt.Sprintf("A%d", rowOffset), fmt.Sprintf("A%d", rowOffset), centeredStyle)
@@ -153,12 +166,8 @@ func Masterdownload(c *gin.Context) {
 					startCol := 2 + sectionIndex*len(timeSlots)
 					for j, timeSlot := range timeSlots {
 						col, _ := excelize.ColumnNumberToName(startCol + j)
-						// Combine multiple subjects for the same time slot in one cell
 						cellValues := sectionData[section][day][timeSlot]
-						combinedValue := ""
-						if len(cellValues) > 0 {
-							combinedValue = strings.Join(cellValues, "\n-----\n") // Use a delimiter like "-----" to separate entries
-						}
+						combinedValue := strings.Join(cellValues, "\n-----\n")
 						f.SetCellValue(sheetName, fmt.Sprintf("%s%d", col, rowOffset), combinedValue)
 						f.SetCellStyle(sheetName, fmt.Sprintf("%s%d", col, rowOffset), fmt.Sprintf("%s%d", col, rowOffset), centeredStyle)
 					}
@@ -177,7 +186,6 @@ func Masterdownload(c *gin.Context) {
 	filename := fmt.Sprintf("timetable_%s_%s.xlsx", academicYear, time.Now().Format("20060102150405"))
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-	c.Header("Content-Transfer-Encoding", "binary")
 
 	if err := f.Write(c.Writer); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write Excel file: " + err.Error()})

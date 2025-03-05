@@ -9,7 +9,7 @@ import (
 
 func GetHours() ([]models.Hour, error) {
 	var hours []models.Hour
-	rows, err := config.Database.Query("SELECT id, start_time, end_time FROM hours")
+	rows, err := config.Database.Query("SELECT id, start_time, end_time FROM hours where status = '1'")
 	if err != nil {
 		return nil, fmt.Errorf("error querying hours: %v", err)
 	}

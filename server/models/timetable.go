@@ -4,6 +4,7 @@ import "time"
 
 type WorkingDay struct {
 	WorkingDate time.Time `json:"working_date"`
+	Day string `json:"day"`
 }
 
 type Day struct {
@@ -31,7 +32,9 @@ type Subject struct {
 type Section struct {
 	ID          int    `json:"id"`
 	SectionName string `json:"section_name"`
+	SemesterID   int    `json:"semester_id"`
 	DepartmentID    int    `json:"department_id"`
+	AcademicYear  int    `json:"academic_year_id"`
 }
 type Faculty struct {
 	ID           int    `json:"id"`
