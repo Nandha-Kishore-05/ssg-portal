@@ -29,7 +29,7 @@ const routes = [
   },
   {
     path: "/dashboard",
-    element: <ExcelUpload />,
+    element: <Bulkentry />,
   },
   {
     path: "/timetable",

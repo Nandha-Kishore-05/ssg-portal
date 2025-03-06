@@ -105,6 +105,8 @@ func getDynamicPeriodSlots(periods int) ([]struct{ StartTime, EndTime string }, 
 		4: {"11:30:00", "12:20:00"},
 		5: {"13:30:00", "14:20:00"},
 		6: {"14:20:00", "15:10:00"},
+		7: {"15:25:00","16:30:00"},
+		8: {"16:30:00","17:30:00"},
 	}
 
 	// Assume "periods" is a bitmask or list of selected periods (e.g., [3, 4])

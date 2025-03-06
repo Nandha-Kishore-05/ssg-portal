@@ -79,19 +79,33 @@ const Bulkentry = () => {
 
         // Manually adjust date/time fields if necessary
         const processedData = jsonData.map((row, rowIndex) => {
-            if (rowIndex > 0) { // Skip header row
-                row.forEach((cell, colIndex) => {
-                    const header = jsonData[0][colIndex];
-                    if (header && header.toLowerCase().includes('time')) {
-                        // Assume time columns contain 'time' in their header
-                        row[colIndex] = XLSX.SSF.format('hh:mm:ss', cell); // Format to time string
-                    }
-                });
-            }
-            return row;
-        });
+          if (rowIndex > 0) { // Skip header row
+              row.forEach((cell, colIndex) => {
+                  const header = jsonData[0][colIndex];
+      
+                  if (header) {
+                      if (header.toLowerCase().includes('day') || header.toLowerCase().includes('date')) {
+                          // Convert to YYYY-MM-DD format
+                          if (cell instanceof Date) {
+                              row[colIndex] = cell.toISOString().split("T")[0]; // Ensures YYYY-MM-DD format
+                          } else if (typeof cell === "string") {
+                              row[colIndex] = cell.replace(/\//g, "-"); // Convert 2024/12/16 → 2024-12-16
+                          }
+                      }
+      
+                      if (header.toLowerCase().includes('time')) {
+                          // Ensure time remains formatted correctly
+                          row[colIndex] = XLSX.SSF.format('hh:mm:ss', cell);
+                      }
+                  }
+              });
+          }
+          return row;
+      });
+      
 
         setExcelData(processedData);
+   
     };
 
     reader.readAsBinaryString(file);
@@ -111,7 +125,7 @@ const Bulkentry = () => {
   };
   const sendDataToBackend = () => {
     const jsonData = parseExcelToJson(); // Replace with your function to parse Excel data.
-
+  console.log(jsonData)
     const formattedData = {
         entries: jsonData.map(entry => ({
             day_name: entry["DAY"] ? entry["DAY"].trim().toUpperCase() : "",
@@ -160,7 +174,7 @@ const Bulkentry = () => {
 
   return (
     <AppLayout
-      rId={7}
+      rId={1}
       title="Manual Entry"
       body={
         <div>
