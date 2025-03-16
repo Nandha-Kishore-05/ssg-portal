@@ -2,6 +2,7 @@ package timetables
 
 import (
 	"fmt"
+	"log"
 
 	"ssg-portal/config"
 	"ssg-portal/models"
@@ -26,7 +27,7 @@ func GetAvailableDays() ([]models.Day, error) {
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating rows: %v", err)
 	}
-
+  log.Println("days", days)
 	return days, nil
 }
 

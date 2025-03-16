@@ -63,7 +63,7 @@ const Timetable = (props) => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8080/timetable/${props.departmentID}/${props.semesterID}/${props.academicYearID}/${props.sectionID}/${props.startDate}/${props.endDate}`);
+        const response = await axios.get(`http://localhost:8080/timetable/${props.departmentID}/${props.semesterID}/${props.academicYearID}/${props.sectionID}`);
         const data = response.data;
 
         console.log('Fetched data:', data);
@@ -112,7 +112,7 @@ const Timetable = (props) => {
     };
 
     fetchSchedule();
-  }, [props.departmentID, props.semesterID,props.academicYearID,props.sectionID,props.startDate,props.endDate]);
+  }, [props.departmentID, props.semesterID,props.academicYearID,props.sectionID ]);
 
   const handleSaveTimetable = async (timetableData) => {
     try {

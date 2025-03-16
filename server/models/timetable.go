@@ -7,6 +7,12 @@ type WorkingDay struct {
 	Day string `json:"day"`
 }
 
+type FacultyAssignment struct {
+    FacultyID   int
+    FacultyName string
+    SectionIDs  map[int]bool
+}
+
 type Day struct {
 	ID      int    `json:"id"`
 	DayName string `json:"day_name"`
@@ -41,6 +47,8 @@ type Faculty struct {
 	FacultyName  string `json:"name"`
 	DepartmentID int    `json:"department_id"`
 	SubjectName  string `json:"subject_name"`
+	AcademicYear  int    `json:"academic_year_id"`
+	SemesterID   int    `json:"semester_id"`
 }
 
 type Classroom struct {

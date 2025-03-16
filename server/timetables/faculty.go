@@ -7,7 +7,7 @@ import (
 	"ssg-portal/models"
 )
 
-func GetFaculty(departmentID, semesterID, academicYearID, sectionID int) ([]models.Faculty, error) {
+func GetFaculty(departmentID, semesterID, academicYearID int) ([]models.Faculty, error) {
 	var faculty []models.Faculty
 
 	rows, err := config.Database.Query(
@@ -22,9 +22,9 @@ func GetFaculty(departmentID, semesterID, academicYearID, sectionID int) ([]mode
 		WHERE 
 			fs.department_id = ? AND 
 			fs.semester_id = ? AND 
-			fs.academic_year_id = ? AND 
-			fs.section_id = ?`,
-		departmentID, semesterID, academicYearID, sectionID,
+			fs.academic_year_id = ? 
+			`,
+		departmentID, semesterID, academicYearID,
 	)
 
 	if err != nil {

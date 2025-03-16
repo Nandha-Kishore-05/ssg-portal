@@ -142,10 +142,14 @@ func GenerateTimetable(c *gin.Context) {
 	semesterIDStr := c.Param("semesterId")
 	academicYearIDStr := c.Param("academicYearID")
 	sectionIDStr := c.Param("sectionID")
-	startDateStr := c.Param("startdate")
-	endDateStr := c.Param("enddate")
+	// startDateStr := c.Param("startdate")
+	// endDateStr := c.Param("enddate")
 	log.Println("API ENTERED")
 	// Convert input strings to integers
+	log.Println("dept",departmentIDStr )
+	log.Println("sem",semesterIDStr )
+	log.Println("academic ",academicYearIDStr )
+	log.Println("section",sectionIDStr )
 	departmentID, err := strconv.Atoi(departmentIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid department ID"})
@@ -171,23 +175,30 @@ func GenerateTimetable(c *gin.Context) {
 	}
 
 	// Parse start and end dates
-	startDate, err := strconv.Atoi(startDateStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date"})
-		return
-	}
+	// startDate, err := strconv.Atoi(startDateStr)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start date"})
+	// 	return
+	// }
 
-	endDate, err := strconv.Atoi(endDateStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date"})
-		return
-	}
+	// endDate, err := strconv.Atoi(endDateStr)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end date"})
+	// 	return
+	// }
 
-	// Fetch working and holiday days within the date range
-	workingDays, err := timetables.GetWorkingDaysInRange(academicYearID, semesterID, startDate, endDate)
+	// // Fetch working and holiday days within the date range
+	// workingDays, err := timetables.GetWorkingDaysInRange(academicYearID, semesterID, startDate, endDate)
+	// if err != nil {
+	// 	log.Printf("Error fetching working days: %v", err)
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve working days"})
+	// 	return
+	// }
+
+	days, err := timetables.GetAvailableDays()
 	if err != nil {
-		log.Printf("Error fetching working days: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve working days"})
+		log.Printf("Error getting available days: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve available days"})
 		return
 	}
 
@@ -227,7 +238,7 @@ func GenerateTimetable(c *gin.Context) {
 		return
 	}
 
-	faculty, err := timetables.GetFaculty(departmentID, semesterID, academicYearID, sectionID)
+	faculty, err := timetables.GetFaculty(departmentID, semesterID, academicYearID)
 	if err != nil {
 		log.Printf("Error getting faculty: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve faculty"})
@@ -249,7 +260,7 @@ func GenerateTimetable(c *gin.Context) {
 	}
 
 	// Generate timetable by iterating over working days between start and end date
-	timetable := timetables.GenerateTimetable(workingDays, hours, subjects, faculty, classrooms, facultySubjects, semesters, section, academicYear, departmentID, semesterID, academicYearID, sectionID)
+	timetable := timetables.GenerateTimetable(days, hours, subjects, faculty, classrooms, facultySubjects, semesters, section, academicYear, departmentID, semesterID, academicYearID, sectionID)
 	if timetable == nil {
 		log.Printf("Error generating timetable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to generate timetable"})

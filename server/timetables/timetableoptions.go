@@ -36,6 +36,7 @@ func TimetableOptions(c *gin.Context) {
 
     c.JSON(http.StatusOK, options)
 }
+
 func VenueOptions(c *gin.Context) {
     departmentID := c.Query("department_id")
     academicYearID := c.Query("academic_year_id")

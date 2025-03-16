@@ -34,33 +34,33 @@ const GenerateTimetable = () => {
   const [viewedendDate, setViewedendDate] = useState(null);
   // Fetch department options
 
-  useEffect(() => {
-    const fetchStartDate = async () => {
-      try {
-        const response = await axios.get('http://localhost:8080/workingDayoptions');
-        setstartDateOptions(response.data);
-      } catch (error) {
-        console.error('Error fetching Start Date options:', error);
+  // useEffect(() => {
+  //   const fetchStartDate = async () => {
+  //     try {
+  //       const response = await axios.get('http://localhost:8080/workingDayoptions');
+  //       setstartDateOptions(response.data);
+  //     } catch (error) {
+  //       console.error('Error fetching Start Date options:', error);
  
-      }
-    };
+  //     }
+  //   };
 
-    fetchStartDate();
-  }, []);
+  //   fetchStartDate();
+  // }, []);
 
-  useEffect(() => {
-    const fetchEndDate = async () => {
-      try {
-        const response = await axios.get('http://localhost:8080/workingDayoptions');
-        setendDateOptions(response.data);
-      } catch (error) {
-        console.error('Error fetching Start Date options:', error);
+  // useEffect(() => {
+  //   const fetchEndDate = async () => {
+  //     try {
+  //       const response = await axios.get('http://localhost:8080/workingDayoptions');
+  //       setendDateOptions(response.data);
+  //     } catch (error) {
+  //       console.error('Error fetching Start Date options:', error);
  
-      }
-    };
+  //     }
+  //   };
 
-    fetchEndDate();
-  }, []);
+  //   fetchEndDate();
+  // }, []);
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -137,13 +137,13 @@ const GenerateTimetable = () => {
   }, [academicYear, semOptions]);
 
   const handleViewTimetable = () => {
-    if (department && semester && academicYear && section && startDate && endDate) {
+    if (department && semester && academicYear && section) {
       setViewedDepartment(department.value);
       setViewedSemester(semester.value);
       setViewedAcademic(academicYear.value);
       setViewedSection(section.value)
-      setViewedstartDate(startDate.value)
-      setViewedendDate(endDate.value)
+      // setViewedstartDate(startDate.value)
+      // setViewedendDate(endDate.value)
       setIsOpen(true);
     } else {
       console.error('Please select all required options (department, semester, academic year).');
@@ -183,18 +183,18 @@ const GenerateTimetable = () => {
               onChange={setSection}
               options={sectionOptions}
             />
-             <CustomSelect
+             {/* <CustomSelect
               placeholder="START DATE"
               value={startDate}
               onChange={setstartDate}
               options={startDateOptions}
             />
-             <CustomSelect
+            <CustomSelect
               placeholder="END DATE"
               value={endDate}
               onChange={setendDate}
               options={endDateOptions}
-            />
+            /> */}
                
             <CustomButton
               width="150"
@@ -205,8 +205,8 @@ const GenerateTimetable = () => {
            
           </div>
 
-          {(viewedDepartment && viewedSemester && viewedAcademic && viewedSection && viewedstartDate && viewedendDate &&  isOpen) && 
-            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} academicYearID={viewedAcademic} sectionID = {viewedSection} startDate = {viewedstartDate} endDate = {viewedendDate} />
+          {(viewedDepartment && viewedSemester && viewedAcademic && viewedSection &&  isOpen) && 
+            <Timetable departmentID={viewedDepartment} semesterID={viewedSemester} academicYearID={viewedAcademic} sectionID = {viewedSection}  />
           }
         </div>
       }
