@@ -243,8 +243,8 @@ const SavedTimetable = (props) => {
   );
 
   return (
-    <div className="container-1">
-       <div className="header-k">
+    <div className="container-3">
+       <div className="header-i">
        <div className="header-info">
           <h2 style={{ fontSize: '20px', marginTop: '5px' }}>Semester : S{props.semesterID} </h2>
         
@@ -302,11 +302,11 @@ const SavedTimetable = (props) => {
         });
 
         const cellStyle = {
-          border: '2px solid #ddd',
-          padding: '7px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          textAlign: 'center',
+          // border: '2px solid #ddd',
+          // padding: '7px',
+          // fontSize: '16px',
+          // fontWeight: 'bold',
+          // textAlign: 'center',
           cursor: isEditMode ? 'pointer' : 'default',
           backgroundColor: isAvailableTiming
             ? '#dff0d8' // Light green if timing is available
