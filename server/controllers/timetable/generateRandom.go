@@ -62,7 +62,7 @@ func generateRandomTimetable(
 		periodsLeft := make(map[string]int)
 		facultyDailyCount := make(map[string]map[string]int)
 		status0Assignments := make(map[string]map[string]bool)
-		labSubjectAssigned := make(map[string]bool)
+		labSubjectAssigned := make(map[string]int)
 		facultyAssignments := make(map[string]map[string]int)
 		var labSubjects, nonLabSubjects []models.Subject
 		for _, subject := range subjects {
@@ -107,7 +107,19 @@ func generateRandomTimetable(
 		rand.Seed(time.Now().UnixNano())
 
 		for _, day := range days {
+			// Create a random order of hour indices for lab allocation
+			hourIndices := make([]int, len(hours))
 			for i := 0; i < len(hours); i++ {
+				hourIndices[i] = i
+			}
+
+			// Shuffle the hour indices randomly
+			rand.Shuffle(len(hourIndices), func(i, j int) {
+				hourIndices[i], hourIndices[j] = hourIndices[j], hourIndices[i]
+			})
+
+			// Now iterate through hours in random order
+			for _, i := range hourIndices {
 				for attempts := 0; attempts < maxAttempts; attempts++ {
 					var filteredLabSubjects []models.Subject
 
@@ -115,7 +127,7 @@ func generateRandomTimetable(
 					for _, subject := range labSubjects {
 						if periodsLeft[subject.Name] > 0 &&
 							(!subjectsAssigned[day.DayName][subject.Name] || (subject.Status == 0 && len(status0Assignments[subject.Name]) == 0)) &&
-							!labSubjectAssigned[day.DayName] {
+							labSubjectAssigned[day.DayName] < 2 {
 							filteredLabSubjects = append(filteredLabSubjects, subject)
 						}
 					}
@@ -160,7 +172,7 @@ func generateRandomTimetable(
 							if labVenue.ID == 0 {
 								continue // No lab venue found for this subject
 							}
-							log.Println("LAB VENUE:", labVenue)
+							//log.Println("LAB VENUE:", labVenue)
 
 							entry1 := models.TimetableEntry{
 								DayName:      day.DayName,
@@ -198,7 +210,7 @@ func generateRandomTimetable(
 							periodsLeft[subject.Name] -= 2
 							subjectsAssigned[day.DayName][subject.Name] = true
 							status0Assignments[subject.Name][startTime] = true
-							labSubjectAssigned[day.DayName] = true
+							labSubjectAssigned[day.DayName]++
 							// Ensure facultyAssignments[day] is initialized
 							if _, exists := facultyAssignments[day.DayName]; !exists {
 								facultyAssignments[day.DayName] = make(map[string]int)

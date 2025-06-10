@@ -249,15 +249,15 @@ func Masterdownload(c *gin.Context) {
 		return
 	}
 
-	timeSlots := []string{
-		"08:45:00 - 09:35:00",
-		"09:35:00 - 10:25:00",
-		"10:40:00 - 11:30:00",
-		"11:30:00 - 12:20:00",
-		"13:30:00 - 14:20:00",
-		"14:20:00 - 15:10:00",
-		"15:25:00 - 16:30:00",
-	}
+		timeSlots := []string{
+			"08:45:00 - 09:35:00",
+			"09:35:00 - 10:25:00",
+			"10:40:00 - 11:30:00",
+			"11:30:00 - 12:20:00",
+			"13:30:00 - 14:20:00",
+			"14:20:00 - 15:10:00",	
+			"15:25:00 - 16:30:00",
+		}
 	days := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 
 	departmentData := make(map[string]map[string]map[string]map[string]map[string][]string)

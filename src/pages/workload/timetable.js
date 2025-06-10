@@ -326,7 +326,7 @@ const SavedTimetable = (props) => {
                 <div key={idx}>
                   <div>{item.subject_name}</div>
                   <div>{item.faculty_name}</div>
-                  {/* <div>{item.classroom}</div> */}
+                  <div>{item.classroom}</div>
                 </div>
               ))
             ) : (

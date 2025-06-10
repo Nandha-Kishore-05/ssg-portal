@@ -1,6 +1,7 @@
 package subjectUpload
 
 import (
+	"log"
 	"net/http"
 	"ssg-portal/config"
 
@@ -43,17 +44,24 @@ func UploadDetails(c *gin.Context) {
 	for _, subject := range request.SubjectData {
 		var subjectID int
 		var facultyID int
+
 		status := "1"
 		if subject.LabSubject == "YES" {
 			status = "0"
 		}
-		query := "SELECT id FROM subjects WHERE name = ? AND  course_code = ?"
-		err := config.Database.QueryRow(query, subject.CourseName, subject.CourseCode).Scan(&subjectID)
+
+		subjectstatus := 1
+		if subject.LabSubject == "YES" {
+			subjectstatus = 2
+		}
+		log.Println(subjectstatus,subject.CourseName)
+		query := "SELECT id FROM subjects WHERE name = ? AND  course_code = ? AND status = ?"
+		err := config.Database.QueryRow(query, subject.CourseName, subject.CourseCode,subjectstatus).Scan(&subjectID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Subject not found", "Course Code": subject.CourseCode})
 			return
 		}
-
+       log.Println(subjectID)
 		facultyQuery := "SELECT id FROM faculty WHERE  faculty_id = ?"
 		err = config.Database.QueryRow(facultyQuery, subject.FacultyID).Scan(&facultyID)
 		if err != nil {

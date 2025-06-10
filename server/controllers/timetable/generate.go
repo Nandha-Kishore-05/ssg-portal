@@ -96,89 +96,6 @@ func AreAllSubjectFacultyAvailableAcrossSectionsFast(
 	return len(unavailableFaculties) == 0
 }
 
-func AreAllSubjectFacultyAvailableAcrossSections(
-	existingTimetable map[string]map[string][]models.TimetableEntry,
-	subjectID int,
-	dayName string,
-	startTime string,
-	departmentID int,
-	semesterID int,
-	academicYearID int,
-	sectionMap map[int]bool,
-	facultySubjectMap map[int]map[int][]models.Faculty) bool {
-
-	log.Println("Checking faculty availability across sections")
-
-	// Get all sections from the in-memory map instead of database
-	sections := make([]int, 0)
-	for sectionID := range sectionMap {
-		// Filter by department, semester, and academic year (assuming this logic is handled elsewhere)
-		sections = append(sections, sectionID)
-	}
-
-	// For each section, check if the faculty assigned to this subject is available
-	for _, sectionID := range sections {
-		log.Println("Checking section:", sectionID)
-
-		// Get the faculty assigned to this subject from the hashmap
-		faculty := facultySubjectMap[subjectID]
-		if faculty == nil {
-			log.Println("No faculty found for subject:", subjectID)
-			continue
-		}
-
-		// Convert faculty map into a list of names
-		var facultyNames []string
-		for _, facultyList := range faculty {
-			for _, f := range facultyList {
-				facultyNames = append(facultyNames, f.FacultyName)
-			}
-		}
-
-		log.Println("Total faculties:", len(facultyNames))
-
-		// Check availability of all faculties at the given day & time
-		unavailableFaculties := IsFacultyAvailable(existingTimetable, facultyNames, dayName, startTime)
-
-		if len(unavailableFaculties) > 0 {
-			log.Println("Unavailable faculties:", unavailableFaculties)
-			return false // If at least one faculty is unavailable, reject the slot
-		}
-	}
-
-	return true // All faculties across all sections are available for this subject
-}
-
-func IsFacultyAvailable(
-	existingTimetable map[string]map[string][]models.TimetableEntry,
-	facultyList []string,
-	dayName string,
-	startTime string) []string { // Returns a slice of unavailable faculty names
-
-	log.Println("Checking faculty availability")
-
-	var unavailableFaculties []string
-
-	for _, facultyName := range facultyList {
-		log.Println("Checking faculty:", facultyName)
-
-		if facultyEntries, exists := existingTimetable[facultyName]; exists {
-			if dayEntries, exists := facultyEntries[dayName]; exists {
-				for _, entry := range dayEntries {
-					if entry.StartTime == startTime {
-						log.Println("Faculty", facultyName, "is unavailable at", startTime, "on", dayName)
-						unavailableFaculties = append(unavailableFaculties, facultyName)
-						break // No need to check further for this faculty
-					}
-				}
-			}
-		}
-	}
-
-	return unavailableFaculties // Return the list of unavailable faculties
-}
-
-// Function to build the section map in memory (called during initialization)
 func BuildSectionMap(departmentID, semesterID, academicYearID int) (map[int]bool, error) {
 	sectionMap := make(map[int]bool)
 
@@ -275,7 +192,7 @@ func GenerateTimetable(
 		}
 	}
 
-	existingTimetable, err := FetchExistingTimetable()
+	existingTimetable, err := FetchExistingTimetable(academicYearID)
 	if err != nil {
 		fmt.Println("Error fetching existing timetable:", err)
 		return nil
@@ -308,7 +225,7 @@ func GenerateTimetable(
 	if existingSectionID == 0 {
 		log.Println("kishore")
 		// Fetch the existing timetable and handle errors
-		existingTimetable, err := FetchExistingTimetable()
+		existingTimetable, err := FetchExistingTimetable(academicYearID)
 		if err != nil {
 			fmt.Println("Error fetching existing timetable:", err)
 			return nil
@@ -383,6 +300,7 @@ func GenerateTimetable(
 			facultyAssignments := make(map[string]map[string]string)
 			subjectDailyCount := make(map[string]map[string]int)
 			labAssigned := make(map[string]bool)
+			labAssignedday := make(map[string]int)
 
 			// Initialize maps
 			for _, subject := range subjects {
@@ -398,11 +316,17 @@ func GenerateTimetable(
 				facultyAssignments[day.DayName] = make(map[string]string)
 				subjectDailyCount[day.DayName] = make(map[string]int)
 				labAssigned[day.DayName] = false
+				labAssignedday[day.DayName] = 0
+				// Apply timetable skips
 				if skips, ok := skipTimetable[day.DayName]; ok {
-					for startTime := range skips {
-						timetable[day.DayName][startTime] = []models.TimetableEntry{}
+					for startTime, entries := range skips {
+						for _, entry := range entries {
+							timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
+							subjectsAssigned[day.DayName][entry.SubjectName] = true
+						}
 					}
 				}
+
 			}
 
 			rand.Seed(time.Now().UnixNano())
@@ -423,7 +347,7 @@ func GenerateTimetable(
 					var eligibleSubjects []models.Subject
 					for _, subject := range subjects {
 						// Check basic eligibility
-						dailyLimit := 2
+						dailyLimit := 4
 						if subject.Status != 0 {
 							dailyLimit = 1
 						}
@@ -436,7 +360,10 @@ func GenerateTimetable(
 						}
 
 						// Lab-specific checks
-						if subject.Status == 0 && labAssigned[day.DayName] {
+						// if subject.Status == 0 && labAssigned[day.DayName] {
+						// 	continue
+						// }
+						if subject.Status == 0 && labAssignedday[day.DayName] >= 2 {
 							continue
 						}
 
@@ -485,16 +412,32 @@ func GenerateTimetable(
 					if assignedTime, exists := facultyAssignments[day.DayName][selectedFaculty.FacultyName]; exists && assignedTime == startTime {
 						continue
 					}
-   
+
+					labVenuesBySubject := make(map[int][]models.LabVenue)
+					for _, labVenue := range labVenues {
+						labVenuesBySubject[labVenue.SubjectID] = append(labVenuesBySubject[labVenue.SubjectID], labVenue)
+					}
+
 					// Select classroom (lab or regular)
 					var selectedClassroom models.Classroom
 					if subject.Status == 0 && len(labVenues) > 0 {
-						selectedLabVenue := labVenues[rand.Intn(len(labVenues))]
-						selectedClassroom = models.Classroom{
-							ID:            selectedLabVenue.ID,
-							ClassroomName: selectedLabVenue.LabVenue,
-							DepartmentID:  selectedLabVenue.DepartmentID,
-							SemesterID:    selectedLabVenue.SemesterID,
+						// Filter lab venues that match the current subject ID
+						var matchingLabVenues []models.LabVenue // Assuming LabVenue is the correct type
+						for _, labVenue := range labVenues {
+							if labVenue.SubjectID == subject.ID { // Check if lab venue is mapped to current subject
+								matchingLabVenues = append(matchingLabVenues, labVenue)
+							}
+						}
+
+						// Only assign if there are matching lab venues for this subject
+						if len(matchingLabVenues) > 0 {
+							selectedLabVenue := matchingLabVenues[rand.Intn(len(matchingLabVenues))]
+							selectedClassroom = models.Classroom{
+								ID:            selectedLabVenue.ID,
+								ClassroomName: selectedLabVenue.LabVenue,
+								DepartmentID:  selectedLabVenue.DepartmentID,
+								SemesterID:    selectedLabVenue.SemesterID,
+							}
 						}
 					} else if len(classroomsByDept[subject.DepartmentID]) > 0 {
 						selectedClassroom = classroomsByDept[subject.DepartmentID][rand.Intn(len(classroomsByDept[subject.DepartmentID]))]
@@ -540,6 +483,7 @@ func GenerateTimetable(
 								facultyAssignments[day.DayName][selectedFaculty.FacultyName] = nextStartTime
 								subjectDailyCount[day.DayName][subject.Name] += 2
 								labAssigned[day.DayName] = true
+								labAssignedday[day.DayName]++
 							} else {
 								continue // Can't assign lab here
 							}
@@ -559,10 +503,10 @@ func GenerateTimetable(
 
 			// Check if all subjects were fully assigned
 			allAssigned := true
-			for subjectName, remaining := range periodsLeft {
+			for _, remaining := range periodsLeft {
 				if remaining > 0 {
 					allAssigned = false
-					log.Printf("Subject %s has %d periods left unassigned\n", subjectName, remaining)
+					//log.Printf("Subject %s has %d periods left unassigned\n", subjectName, remaining)
 					break
 				}
 			}
@@ -572,8 +516,6 @@ func GenerateTimetable(
 			}
 		}
 
-		//log.Println("Failed to generate a valid timetable after multiple attempts")
-		//return nil
 	} else {
 		// For sections other than the first, get the section ID to use as reference
 		// Fix: Handle case where sectionsInSameSemester is empty
@@ -652,6 +594,22 @@ func GenerateTimetable(
 				}
 			}
 		}
+
+		// Store failed lab allocations for swapping
+		failedLabAllocations := []struct {
+			Day         string
+			StartTime   string
+			SubjectID   int
+			SubjectName string
+			Entry       struct {
+				DayName     string
+				StartTime   string
+				EndTime     string
+				SubjectName string
+				Status      int
+				CourseCode  string
+			}
+		}{}
 
 		// Iterate through first section's timetable and create entries for current section
 		for day, timeSlots := range firstSectionTimetable {
@@ -769,22 +727,92 @@ func GenerateTimetable(
 
 					// Select appropriate classroom based on subject type
 					var selectedClassroom models.Classroom
+					//var labOccupancyTracker = make(map[string]map[string]map[int]int)
+
+					// Replace your lab venue allocation section with this:
+
 					if entry.Status == 0 && len(labVenues) > 0 { // Check lab subjects
 						var selectedLabVenue models.LabVenue
-						availableLabVenues := []models.LabVenue{}
+						var foundLab bool = false
 
-						// Filter out already assigned lab venues for the same day and time
+						// Get current lab occupancy from database for this academic year
+						labOccupancy, err := lab.GetLabOccupancyFromDB(day, startTime, academicYearID)
+						if err != nil {
+							fmt.Printf("Error getting lab occupancy: %v\n", err)
+							continue
+						}
+
+						// Filter lab venues that match the subject ID
+						matchingLabVenues := []models.LabVenue{}
 						for _, lab := range labVenues {
-							if labVenueAssignments[day][entry.StartTime] != lab.LabVenue {
-								availableLabVenues = append(availableLabVenues, lab)
+							if lab.SubjectID == subjectID { // Use subjectID instead of entry.SubjectID
+								matchingLabVenues = append(matchingLabVenues, lab)
 							}
 						}
 
-						if len(availableLabVenues) > 0 {
-							selectedLabVenue = availableLabVenues[rand.Intn(len(availableLabVenues))]
-							labVenueAssignments[day][entry.StartTime] = selectedLabVenue.LabVenue // Mark as assigned
-						} else {
-							fmt.Println("Warning: No available lab venue for", day, entry.StartTime)
+						if len(matchingLabVenues) == 0 {
+							fmt.Printf("Warning: No lab venues found for subject ID %d\n", subjectID)
+							continue
+						}
+
+						// Check each matching lab venue for availability based on max_sections
+						for _, lab := range matchingLabVenues {
+							// Get current occupancy from database
+							currentOccupancy := labOccupancy[lab.LabVenue] // Use lab name from database
+
+							// Check if this lab has capacity (current occupancy < max_sections)
+							if currentOccupancy < lab.MaxSections {
+								selectedLabVenue = lab
+								foundLab = true
+								log.Printf("Allocated lab: %s (ID: %d) for subject %d at %s %s. Current occupancy: %d/%d (Academic Year: %d)",
+									lab.LabVenue, lab.ID, subjectID, day, startTime,
+									currentOccupancy+1, lab.MaxSections, academicYearID)
+								break
+							} else {
+								log.Printf("Lab %s is at max capacity: %d/%d at %s %s (Academic Year: %d)",
+									lab.LabVenue, currentOccupancy, lab.MaxSections, day, startTime, academicYearID)
+							}
+						}
+
+						if !foundLab {
+							fmt.Printf("Warning: All lab venues for subject %d are at max capacity at %s %s (Academic Year: %d). Adding to failed allocations for swapping.\n",
+								subjectID, day, startTime, academicYearID)
+
+							// Store failed allocation for potential swapping
+							failedLabAllocations = append(failedLabAllocations, struct {
+								Day         string
+								StartTime   string
+								SubjectID   int
+								SubjectName string
+								Entry       struct {
+									DayName     string
+									StartTime   string
+									EndTime     string
+									SubjectName string
+									Status      int
+									CourseCode  string
+								}
+							}{
+								Day:         day,
+								StartTime:   startTime,
+								SubjectID:   subjectID,
+								SubjectName: entry.SubjectName,
+								Entry: struct {
+									DayName     string
+									StartTime   string
+									EndTime     string
+									SubjectName string
+									Status      int
+									CourseCode  string
+								}{
+									DayName:     entry.DayName,
+									StartTime:   entry.StartTime,
+									EndTime:     entry.EndTime,
+									SubjectName: entry.SubjectName,
+									Status:      entry.Status,
+									CourseCode:  entry.CourseCode,
+								},
+							})
 							continue // Skip this period if no lab venue is available
 						}
 
@@ -841,6 +869,368 @@ func GenerateTimetable(
 			}
 		}
 
+		// Process failed lab allocations through swapping mechanism
+		// Process failed lab allocations through swapping mechanism
+		for _, failedAlloc := range failedLabAllocations {
+			fmt.Printf("Attempting to swap lab subject %s from %s %s\n", failedAlloc.SubjectName, failedAlloc.Day, failedAlloc.StartTime)
+
+			// Find all consecutive periods for the failed lab subject
+			failedConsecutivePeriods := findConsecutiveLabPeriods(timetable, firstSectionTimetable, failedAlloc.Day, failedAlloc.StartTime, failedAlloc.SubjectName, sectionID, hours)
+			fmt.Printf("Failed subject %s has %d consecutive periods: %v\n", failedAlloc.SubjectName, len(failedConsecutivePeriods), failedConsecutivePeriods)
+
+			// Find existing lab subjects in timetable that can be swapped
+			swapFound := false
+			for swapDay, timeSlots := range timetable {
+				for swapStartTime, entries := range timeSlots {
+					for _, existingEntry := range entries {
+						// Check if this is a lab subject from same dept, semester, academic year, section
+						if existingEntry.Status == 0 && // Lab subject
+							existingEntry.DepartmentID == departmentID &&
+							existingEntry.SemesterID == semesterID &&
+							existingEntry.AcademicYear == academicYearID &&
+							existingEntry.SectionID == sectionID &&
+							(swapDay != failedAlloc.Day || swapStartTime != failedAlloc.StartTime) { // Different time slot
+
+							// Find all consecutive periods for the existing lab subject
+							swapConsecutivePeriods := findConsecutiveLabPeriods(timetable, firstSectionTimetable, swapDay, swapStartTime, existingEntry.SubjectName, sectionID, hours)
+							fmt.Printf("Existing subject %s has %d consecutive periods: %v\n", existingEntry.SubjectName, len(swapConsecutivePeriods), swapConsecutivePeriods)
+
+							// Only proceed if both subjects have the same number of consecutive periods
+							if len(swapConsecutivePeriods) != len(failedConsecutivePeriods) {
+								fmt.Printf("Cannot swap: Different number of consecutive periods. Swap subject has %d periods, Failed subject has %d periods\n",
+									len(swapConsecutivePeriods), len(failedConsecutivePeriods))
+								continue
+							}
+
+							// Find subject ID of existing entry
+							var existingSubjectID int
+							for _, subj := range subjects {
+								if subj.Name == existingEntry.SubjectName {
+									existingSubjectID = subj.ID
+									break
+								}
+							}
+
+							// Check lab venue availability for all consecutive periods
+							allVenuesAvailable := true
+
+							// Check if failed subject's lab venue is available at ALL existing entry's consecutive time slots
+							for _, swapPeriod := range swapConsecutivePeriods {
+								failedLabOccupancy, err := lab.GetLabOccupancyFromDB(swapDay, swapPeriod, academicYearID)
+								if err != nil {
+									allVenuesAvailable = false
+									break
+								}
+
+								// Get failed subject's lab venues
+								failedSubjectLabVenues := []models.LabVenue{}
+								for _, labVen := range labVenues {
+									if labVen.SubjectID == failedAlloc.SubjectID {
+										failedSubjectLabVenues = append(failedSubjectLabVenues, labVen)
+									}
+								}
+
+								var failedSubjectCanFitAtSwapTime bool = false
+								for _, failedLabVen := range failedSubjectLabVenues {
+									if failedLabOccupancy[failedLabVen.LabVenue] < failedLabVen.MaxSections {
+										failedSubjectCanFitAtSwapTime = true
+										break
+									}
+								}
+
+								if !failedSubjectCanFitAtSwapTime {
+									allVenuesAvailable = false
+									break
+								}
+							}
+
+							if !allVenuesAvailable {
+								continue
+							}
+
+							// Check if existing subject's lab venue is available at ALL failed subject's consecutive time slots
+							for _, failedPeriod := range failedConsecutivePeriods {
+								existingLabOccupancy, err := lab.GetLabOccupancyFromDB(failedAlloc.Day, failedPeriod, academicYearID)
+								if err != nil {
+									allVenuesAvailable = false
+									break
+								}
+
+								existingSubjectLabVenues := []models.LabVenue{}
+								for _, labVen := range labVenues {
+									if labVen.SubjectID == existingSubjectID {
+										existingSubjectLabVenues = append(existingSubjectLabVenues, labVen)
+									}
+								}
+
+								var existingSubjectCanFitAtFailedTime bool = false
+								for _, existingLabVen := range existingSubjectLabVenues {
+									if existingLabOccupancy[existingLabVen.LabVenue] < existingLabVen.MaxSections {
+										existingSubjectCanFitAtFailedTime = true
+										break
+									}
+								}
+
+								if !existingSubjectCanFitAtFailedTime {
+									allVenuesAvailable = false
+									break
+								}
+							}
+
+							if !allVenuesAvailable {
+								continue
+							}
+
+							// Check faculty availability for ALL consecutive periods
+							var failedSubjectFacultyAvailable bool = true
+							var existingSubjectFacultyAvailable bool = true
+
+							// Check if failed subject's faculty is available at ALL swap time periods
+							for _, swapPeriod := range swapConsecutivePeriods {
+								facultyFound := false
+								for _, fac := range faculty {
+									if assignedTime, exists := facultyAssignments[swapDay][fac.FacultyName]; !exists || assignedTime != swapPeriod {
+										// Check if faculty can teach failed subject
+										for _, fs := range facultySubjects {
+											if fs.FacultyID == fac.ID && fs.SubjectID == failedAlloc.SubjectID &&
+												fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
+												fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
+												facultyFound = true
+												break
+											}
+										}
+										if facultyFound {
+											break
+										}
+									}
+								}
+								if !facultyFound {
+									failedSubjectFacultyAvailable = false
+									break
+								}
+							}
+
+							// Check if existing subject's faculty is available at ALL failed time periods
+							for _, failedPeriod := range failedConsecutivePeriods {
+								facultyFound := false
+								for _, fac := range faculty {
+									if assignedTime, exists := facultyAssignments[failedAlloc.Day][fac.FacultyName]; !exists || assignedTime != failedPeriod {
+										// Check if faculty can teach existing subject
+										for _, fs := range facultySubjects {
+											if fs.FacultyID == fac.ID && fs.SubjectID == existingSubjectID &&
+												fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
+												fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
+												facultyFound = true
+												break
+											}
+										}
+										if facultyFound {
+											break
+										}
+									}
+								}
+								if !facultyFound {
+									existingSubjectFacultyAvailable = false
+									break
+								}
+							}
+
+							// If all conditions met, perform the swap
+							if failedSubjectFacultyAvailable && existingSubjectFacultyAvailable {
+
+								fmt.Printf("Swapping %d consecutive periods: %s (%v) <-> %s (%v)\n",
+									len(swapConsecutivePeriods), failedAlloc.SubjectName, failedConsecutivePeriods,
+									existingEntry.SubjectName, swapConsecutivePeriods)
+
+								// Get lab venues for both subjects (get the first available one for each)
+								var failedSubjectLabVenue models.LabVenue
+								failedLabOccupancy, _ := lab.GetLabOccupancyFromDB(swapDay, swapConsecutivePeriods[0], academicYearID)
+								for _, labVen := range labVenues {
+									if labVen.SubjectID == failedAlloc.SubjectID {
+										if failedLabOccupancy[labVen.LabVenue] < labVen.MaxSections {
+											failedSubjectLabVenue = labVen
+											break
+										}
+									}
+								}
+
+								var existingSubjectLabVenue models.LabVenue
+								existingLabOccupancy, _ := lab.GetLabOccupancyFromDB(failedAlloc.Day, failedConsecutivePeriods[0], academicYearID)
+								for _, labVen := range labVenues {
+									if labVen.SubjectID == existingSubjectID {
+										if existingLabOccupancy[labVen.LabVenue] < labVen.MaxSections {
+											existingSubjectLabVenue = labVen
+											break
+										}
+									}
+								}
+
+								// Get faculty for both subjects (get the first available one for each)
+								var failedSubjectFaculty models.Faculty
+								for _, fac := range faculty {
+									if assignedTime, exists := facultyAssignments[swapDay][fac.FacultyName]; !exists || assignedTime != swapConsecutivePeriods[0] {
+										for _, fs := range facultySubjects {
+											if fs.FacultyID == fac.ID && fs.SubjectID == failedAlloc.SubjectID &&
+												fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
+												fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
+												failedSubjectFaculty = fac
+												break
+											}
+										}
+										if failedSubjectFaculty.ID != 0 {
+											break
+										}
+									}
+								}
+
+								var existingSubjectFaculty models.Faculty
+								for _, fac := range faculty {
+									if assignedTime, exists := facultyAssignments[failedAlloc.Day][fac.FacultyName]; !exists || assignedTime != failedConsecutivePeriods[0] {
+										for _, fs := range facultySubjects {
+											if fs.FacultyID == fac.ID && fs.SubjectID == existingSubjectID &&
+												fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
+												fs.AcademicYear == academicYearID && fs.SectionID == sectionID {
+												existingSubjectFaculty = fac
+												break
+											}
+										}
+										if existingSubjectFaculty.ID != 0 {
+											break
+										}
+									}
+								}
+
+								// STEP 1: Remove ALL consecutive periods of existing subject from swap time slots
+								for _, swapPeriod := range swapConsecutivePeriods {
+									if entries, exists := timetable[swapDay][swapPeriod]; exists {
+										var newEntries []models.TimetableEntry
+										for _, entry := range entries {
+											if !(entry.SubjectName == existingEntry.SubjectName &&
+												entry.SectionID == sectionID &&
+												entry.Status == 0) {
+												newEntries = append(newEntries, entry)
+											}
+										}
+										timetable[swapDay][swapPeriod] = newEntries
+									}
+									// Clear faculty assignment
+									delete(facultyAssignments[swapDay], existingEntry.FacultyName)
+								}
+
+								// STEP 2: Remove ALL consecutive periods of failed subject from failed time slots
+								for _, failedPeriod := range failedConsecutivePeriods {
+									if entries, exists := timetable[failedAlloc.Day][failedPeriod]; exists {
+										var newEntries []models.TimetableEntry
+										for _, entry := range entries {
+											if !(entry.SubjectName == failedAlloc.SubjectName &&
+												entry.SectionID == sectionID &&
+												entry.Status == 0) {
+												newEntries = append(newEntries, entry)
+											}
+										}
+										timetable[failedAlloc.Day][failedPeriod] = newEntries
+									}
+								}
+
+								// STEP 3: Add failed subject to ALL swap time periods
+								for _, swapPeriod := range swapConsecutivePeriods {
+									// Find the correct end time for the swap time slot
+									var swapEndTime string
+									for _, hour := range hours {
+										if hour.StartTime == swapPeriod {
+											swapEndTime = hour.EndTime
+											break
+										}
+									}
+
+									// Create new entry for failed subject at swap time
+									newFailedEntry := models.TimetableEntry{
+										DayName:      swapDay,
+										StartTime:    swapPeriod,
+										EndTime:      swapEndTime,
+										SubjectName:  failedAlloc.SubjectName,
+										FacultyName:  failedSubjectFaculty.FacultyName,
+										Classroom:    failedSubjectLabVenue.LabVenue,
+										Status:       failedAlloc.Entry.Status,
+										SemesterID:   semesterID,
+										DepartmentID: departmentID,
+										AcademicYear: academicYearID,
+										CourseCode:   failedAlloc.Entry.CourseCode,
+										SectionID:    sectionID,
+									}
+
+									if _, ok := timetable[swapDay]; !ok {
+										timetable[swapDay] = make(map[string][]models.TimetableEntry)
+									}
+									if _, ok := timetable[swapDay][swapPeriod]; !ok {
+										timetable[swapDay][swapPeriod] = []models.TimetableEntry{}
+									}
+									timetable[swapDay][swapPeriod] = append(timetable[swapDay][swapPeriod], newFailedEntry)
+
+									// Update faculty assignments for swap periods
+									facultyAssignments[swapDay][failedSubjectFaculty.FacultyName] = swapPeriod
+								}
+
+								// STEP 4: Add existing subject to ALL failed time periods
+								for _, failedPeriod := range failedConsecutivePeriods {
+									// Find the correct end time for the failed time slot
+									var failedEndTime string
+									for _, hour := range hours {
+										if hour.StartTime == failedPeriod {
+											failedEndTime = hour.EndTime
+											break
+										}
+									}
+
+									// Create entry for existing subject at failed time
+									newExistingEntry := models.TimetableEntry{
+										DayName:      failedAlloc.Day,
+										StartTime:    failedPeriod,
+										EndTime:      failedEndTime,
+										SubjectName:  existingEntry.SubjectName,
+										FacultyName:  existingSubjectFaculty.FacultyName,
+										Classroom:    existingSubjectLabVenue.LabVenue,
+										Status:       existingEntry.Status,
+										SemesterID:   semesterID,
+										DepartmentID: departmentID,
+										AcademicYear: academicYearID,
+										CourseCode:   existingEntry.CourseCode,
+										SectionID:    sectionID,
+									}
+
+									if _, ok := timetable[failedAlloc.Day]; !ok {
+										timetable[failedAlloc.Day] = make(map[string][]models.TimetableEntry)
+									}
+									if _, ok := timetable[failedAlloc.Day][failedPeriod]; !ok {
+										timetable[failedAlloc.Day][failedPeriod] = []models.TimetableEntry{}
+									}
+									timetable[failedAlloc.Day][failedPeriod] = append(timetable[failedAlloc.Day][failedPeriod], newExistingEntry)
+
+									// Update faculty assignments for failed periods
+									facultyAssignments[failedAlloc.Day][existingSubjectFaculty.FacultyName] = failedPeriod
+								}
+
+								swapFound = true
+								fmt.Printf("Successfully swapped lab subjects with %d consecutive periods: %s <-> %s\n",
+									len(swapConsecutivePeriods), failedAlloc.SubjectName, existingEntry.SubjectName)
+								break
+							}
+						}
+					}
+					if swapFound {
+						break
+					}
+				}
+				if swapFound {
+					break
+				}
+			}
+
+			if !swapFound {
+				fmt.Printf("Could not find suitable swap for lab subject %s at %s %s\n", failedAlloc.SubjectName, failedAlloc.Day, failedAlloc.StartTime)
+			}
+		}
+
 		// Verify that all periods have assignments
 		for _, day := range days {
 			for _, hour := range hours {
@@ -854,7 +1244,6 @@ func GenerateTimetable(
 		return timetable
 	}
 }
-
 func FetchSectionTimetable(departmentID, semesterID, academicYearID, sectionID int) (map[string]map[string][]models.TimetableEntry, error) {
 	sectionTimetable := make(map[string]map[string][]models.TimetableEntry)
 
@@ -921,4 +1310,95 @@ func IsLabPeriodAvailable(existingTimetable map[string]map[string][]models.Timet
 		}
 	}
 	return true
+}
+
+func findConsecutiveLabPeriods(timetable map[string]map[string][]models.TimetableEntry, firstSectionTimetable map[string]map[string][]models.TimetableEntry, day, startTime, subjectName string, sectionID int, hours []models.Hour) []string {
+	consecutivePeriods := []string{startTime}
+
+	// Find the index of current start time
+	var currentIndex int = -1
+	for i, hour := range hours {
+		if hour.StartTime == startTime {
+			currentIndex = i
+			break
+		}
+	}
+
+	if currentIndex == -1 {
+		return consecutivePeriods
+	}
+
+	// Check forward consecutive periods
+	for i := currentIndex + 1; i < len(hours); i++ {
+		nextStartTime := hours[i].StartTime
+		found := false
+
+		// Check in current timetable
+		if entries, exists := timetable[day][nextStartTime]; exists {
+			for _, entry := range entries {
+				if entry.SubjectName == subjectName && entry.SectionID == sectionID && entry.Status == 0 {
+					consecutivePeriods = append(consecutivePeriods, nextStartTime)
+					found = true
+					break
+				}
+			}
+		}
+
+		// If not found in current timetable, check in first section timetable
+		if !found {
+			if firstSectionEntries, exists := firstSectionTimetable[day][nextStartTime]; exists {
+				for _, entry := range firstSectionEntries {
+					if entry.SubjectName == subjectName && entry.Status == 0 {
+						consecutivePeriods = append(consecutivePeriods, nextStartTime)
+						found = true
+						break
+					}
+				}
+			}
+		}
+
+		// If no consecutive period found, break
+		if !found {
+			break
+		}
+	}
+
+	// Check backward consecutive periods (in case we started from middle of a lab session)
+	for i := currentIndex - 1; i >= 0; i-- {
+		prevStartTime := hours[i].StartTime
+		found := false
+
+		// Check in current timetable
+		if entries, exists := timetable[day][prevStartTime]; exists {
+			for _, entry := range entries {
+				if entry.SubjectName == subjectName && entry.SectionID == sectionID && entry.Status == 0 {
+					// Insert at beginning to maintain chronological order
+					consecutivePeriods = append([]string{prevStartTime}, consecutivePeriods...)
+					found = true
+					break
+				}
+			}
+		}
+
+		// If not found in current timetable, check in first section timetable
+		if !found {
+			if firstSectionEntries, exists := firstSectionTimetable[day][prevStartTime]; exists {
+				for _, entry := range firstSectionEntries {
+					if entry.SubjectName == subjectName && entry.Status == 0 {
+						// Insert at beginning to maintain chronological order
+						consecutivePeriods = append([]string{prevStartTime}, consecutivePeriods...)
+						found = true
+						break
+					}
+				}
+			}
+		}
+
+		// If no consecutive period found, break
+		if !found {
+			break
+		}
+	}
+
+	return consecutivePeriods
 }

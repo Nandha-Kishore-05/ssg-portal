@@ -70,8 +70,10 @@ type FacultySubject struct {
 	SectionID    int    `json:"section_id"`
 	AcademicYear int    `json:"academic_year_id"`
 	DepartmentID int    `json:"department_id"`
-	ClassroomID  int    `json:"classroom_id`
+	ClassroomID  int    `json:"classroom_id"`
+	Periods      int  `json:"periods"`
 }
+
 type TimetableEntry struct {
 	ID              int    `json:"id"`
 	DayName         string `json:"day_name"`
@@ -257,4 +259,15 @@ type LabVenue struct {
 	SubjectID int    `json:"subject_id"`
 	SemesterID    int    `json:"semester_id"`
 	DepartmentID   int    `json:"department_id"`
+	MaxSections int `json : "max_sections`
+}
+
+type SubjectConstraint struct {
+	Name         string
+	ID           int
+	TotalPeriods int
+	Status       int
+	DailyLimit   int
+	DepartmentID int
+	CourseCode   string
 }

@@ -6,12 +6,64 @@ import (
 	"ssg-portal/models"
 )
 
-func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, error) {
+// func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, error) {
+// 	existingTimetable := make(map[string]map[string][]models.TimetableEntry)
+
+// 	rows, err := config.Database.Query(`
+//         SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom, status, semester_id, department_id, academic_year, course_code ,section_id
+//         FROM timetable`)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	for rows.Next() {
+// 		var dayName, startTime, endTime, subjectName, facultyName, classroom string
+// 		var courseCode []byte
+// 		var status, semesterID, departmentID, academicYearID, sectionID int
+
+// 		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID, &departmentID, &academicYearID, &courseCode, &sectionID); err != nil {
+// 			return nil, err
+// 		}
+
+// 		courseCodeStr := string(courseCode)
+
+// 		if _, exists := existingTimetable[facultyName]; !exists {
+// 			existingTimetable[facultyName] = make(map[string][]models.TimetableEntry)
+// 		}
+
+// 		entry := models.TimetableEntry{
+// 			DayName:      dayName,
+// 			StartTime:    startTime,
+// 			EndTime:      endTime,
+// 			SubjectName:  subjectName,
+// 			FacultyName:  facultyName,
+// 			Classroom:    classroom,
+// 			Status:       status,
+// 			SemesterID:   semesterID,
+// 			DepartmentID: departmentID,
+// 			AcademicYear: academicYearID,
+// 			CourseCode:   courseCodeStr,
+// 			SectionID:    sectionID,
+// 		}
+
+// 		existingTimetable[facultyName][dayName] = append(existingTimetable[facultyName][dayName], entry)
+// 	}
+
+// 	return existingTimetable, nil
+// }
+
+func FetchExistingTimetable(academicYearID int) (map[string]map[string][]models.TimetableEntry, error) {
 	existingTimetable := make(map[string]map[string][]models.TimetableEntry)
 
+	// Filter by academic year only for better performance
 	rows, err := config.Database.Query(`
-        SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom, status, semester_id, department_id, academic_year, course_code ,section_id
-        FROM timetable`)
+        SELECT day_name, start_time, end_time, subject_name, faculty_name, classroom, 
+               status, semester_id, department_id, academic_year, course_code, section_id
+        FROM timetable 
+        WHERE academic_year = ?`,
+		academicYearID)
+	
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +74,8 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 		var courseCode []byte
 		var status, semesterID, departmentID, academicYearID, sectionID int
 
-		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, &classroom, &status, &semesterID, &departmentID, &academicYearID, &courseCode, &sectionID); err != nil {
+		if err := rows.Scan(&dayName, &startTime, &endTime, &subjectName, &facultyName, 
+			&classroom, &status, &semesterID, &departmentID, &academicYearID, &courseCode, &sectionID); err != nil {
 			return nil, err
 		}
 
@@ -52,7 +105,6 @@ func FetchExistingTimetable() (map[string]map[string][]models.TimetableEntry, er
 
 	return existingTimetable, nil
 }
-
 
 func FetchManualTimetable(departmentID int, semesterID int, academicYearID int, sectionID int) (map[string]map[string][]models.TimetableEntry, error) {
 
