@@ -153,14 +153,8 @@ const ExcelUpload = () => {
       title="Dashboard"
       body={
         <>
-          <form onSubmit={handleSubmit}>
-            <input type="file" onChange={handleFileChange} />
-            <button type="submit">Upload Excel</button>
-          </form>
-          <Button onClick={downloadExcel} variant="contained" color="primary" style={{ marginTop: "20px" }}>
-            Download as Excel
-          </Button>
-          <div>{renderTable()}</div>
+       
+        
         </>
       }
     />

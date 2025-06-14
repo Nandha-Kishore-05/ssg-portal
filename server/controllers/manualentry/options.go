@@ -9,7 +9,7 @@ import (
 
 func DayAndTimeOptions(c *gin.Context) {
  
-    dayRows, err := config.Database.Query("SELECT working_date FROM master_workingdays")
+    dayRows, err := config.Database.Query("SELECT day_name FROM days")
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return

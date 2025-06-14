@@ -143,7 +143,11 @@ function SaveTimetable() {
       title="Time Table"
       body={
         <>
+          <div className="bg-blue-500">
+      🎉 Tailwind is working!
+    </div>
           <div className='dashboard-container'>
+            
             <div className="dashboard-header">
               <input
                 type="text"

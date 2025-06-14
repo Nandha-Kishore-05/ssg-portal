@@ -55,8 +55,8 @@ func UploadDetails(c *gin.Context) {
 			subjectstatus = 2
 		}
 		log.Println(subjectstatus,subject.CourseName)
-		query := "SELECT id FROM subjects WHERE name = ? AND  course_code = ? AND status = ?"
-		err := config.Database.QueryRow(query, subject.CourseName, subject.CourseCode,subjectstatus).Scan(&subjectID)
+		query := "SELECT id FROM subjects WHERE name = ? AND  course_code = ?"
+		err := config.Database.QueryRow(query, subject.CourseName, subject.CourseCode).Scan(&subjectID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Subject not found", "Course Code": subject.CourseCode})
 			return

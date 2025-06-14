@@ -5,16 +5,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CustomButton from '../../components/button';
-import { Drawer, Box, Typography, List, ListItem, Button, TextField, InputAdornment } from '@mui/material';
+import { Drawer, Box, Typography, List, ListItem, Button, TextField, InputAdornment, IconButton, Grid } from '@mui/material';
 import { ListItemAvatar, Avatar, ListItemText, Divider } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SearchIcon from '@mui/icons-material/Search';
 import './save.css';
-
+import { Modal, Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import CloseIcon from '@mui/icons-material/Close';
+import SubjectIcon from '@mui/icons-material/MenuBook';
+
+import RoomIcon from '@mui/icons-material/Room';
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
 
 const SavedTimetable = (props) => {
 
@@ -30,6 +35,26 @@ const SavedTimetable = (props) => {
   const [facultyName, setFacultyName] = useState('');
   const [day, setDay] = useState('');
   const [availableTimings, setAvailableTimings] = useState([]);
+  const [editTypeModalOpen, setEditTypeModalOpen] = useState(false);
+const [editType, setEditType] = useState(null); // 'swap' or 'manual'
+const [manualEditModalOpen, setManualEditModalOpen] = useState(false);
+const [selectedPeriodDetails, setSelectedPeriodDetails] = useState(null);
+
+
+const modalStyle = {
+  position: 'absolute',
+  top: '45%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 450,
+  bgcolor: 'rgba(255, 255, 255, 0.9)',
+  borderRadius: '16px',
+  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+  backdropFilter: 'blur(12px)',
+  p:6
+}
+
+
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -92,15 +117,15 @@ const SavedTimetable = (props) => {
     }
   };
 
-  const handleOpenDrawer = (day, time,faculty) => {
-    if (!isEditMode) return;
-    setSelectedPeriod({ day, time });
-    setDrawerOpen(true);
-    fetchAvailableFaculty(day, time);
-    fetchAvailableTimings(day,faculty)
-    console.log("Selected faculty:", faculty);
+  // const handleOpenDrawer = (day, time,faculty) => {
+  //   if (!isEditMode) return;
+  //   setSelectedPeriod({ day, time });
+  //   setDrawerOpen(true);
+  //   fetchAvailableFaculty(day, time);
+  //   fetchAvailableTimings(day,faculty)
+  //   console.log("Selected faculty:", faculty);
 
-  };
+  // };
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
@@ -242,6 +267,36 @@ const SavedTimetable = (props) => {
     faculty.subject_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleEditTimetableClick = () => {
+  setEditTypeModalOpen(true);
+};
+
+const handleSelectEditType = (type) => {
+  setEditType(type);
+  setEditTypeModalOpen(false);
+  setIsEditMode(true);
+};
+
+const handleOpenDrawer = (day, time, faculty) => {
+  if (!isEditMode) return;
+
+  if (editType === 'manual') {
+    const periodData = schedule.find(item => item.day_name === day && `${item.start_time} - ${item.end_time}` === time);
+    if (periodData) {
+      setSelectedPeriodDetails(periodData);
+      setManualEditModalOpen(true);
+    }
+  } else {
+    // existing drawer logic for swap
+    setSelectedPeriod({ day, time });
+    setDrawerOpen(true);
+    fetchAvailableFaculty(day, time);
+    fetchAvailableTimings(day, faculty);
+  }
+};
+
+
+
   return (
     <div className="container-3">
        <div className="header-i">
@@ -255,12 +310,13 @@ const SavedTimetable = (props) => {
             label="Download Timetable"
             onClick={handleDownload}
           />
-          <CustomButton
-            width="150" 
-            label={isEditMode ? "Save Edited Timetable" : "Edit Timetable"}
-            backgroundColor={isEditMode ? "green" : "red"}
-            onClick={isEditMode ? handleSaveTimetable : handleToggleEditMode}
-          />
+         <CustomButton
+  width="150"
+  label={isEditMode ? "Save Edited Timetable" : "Edit Timetable"}
+  backgroundColor={isEditMode ? "green" : "red"}
+  onClick={isEditMode ? handleSaveTimetable : handleEditTimetableClick}
+/>
+
         </div>
       </div>
       <table className="table">
@@ -376,7 +432,7 @@ const SavedTimetable = (props) => {
           </InputAdornment>
         ),
         style: {
-          borderBottom: '1px solid #ccc',
+          borderBottom: '1px solid #cccc',
           paddingBottom: '5px',
           fontFamily: 'Nunito, sans-serif',
         },
@@ -447,6 +503,242 @@ const SavedTimetable = (props) => {
 
 
       <ToastContainer />
+     <Modal
+  open={editTypeModalOpen}
+  onClose={() => setEditTypeModalOpen(false)}
+  aria-labelledby="edit-type-modal-title"
+  aria-describedby="edit-type-modal-description"
+>
+  <Box sx={modalStyle}>
+    {/* Close icon */}
+    <IconButton
+      onClick={() => setEditTypeModalOpen(false)}
+      sx={{
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        color: '#444',
+        '&:hover': { color: '#000' },
+      }}
+    >
+      <CloseIcon fontSize="medium" />
+    </IconButton>
+
+    {/* Title */}
+
+   
+   
+
+    {/* Subtitle */}
+     <center>
+                   
+                      <h3 style={{marginTop:'20px',marginBottom:'20px'}}> Are you sure you want to edit the timetable?</h3>
+                  
+                  </center>
+
+    {/* Buttons */}
+    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3 }}>
+      <CustomButton
+        label="Swap"
+        backgroundColor="#1976d2"
+        onClick={() => handleSelectEditType('swap')}
+        style={{
+          width: '160px',
+          height: '50px',
+          backgroundColor: '#E9F5FE',
+          border: '2px solid #1976d2',
+          color: '#1976d2',
+          fontWeight: '600',
+          borderRadius: '10px',
+          transition: '0.3s',
+          boxShadow: '0 2px 6px rgba(25, 118, 210, 0.2)',
+        }}
+        hoverStyle={{
+          backgroundColor: '#0C7FDA',
+          color: '#fff',
+        }}
+      />
+      <CustomButton
+        label="Edit Manually"
+        onClick={() => handleSelectEditType('manual')}
+        style={{
+          width: '160px',
+          height: '50px',
+          backgroundColor: '#1976d2',
+          color: '#fff',
+          fontWeight: '600',
+          borderRadius: '10px',
+          boxShadow: '0 2px 8px rgba(25, 118, 210, 0.3)',
+          transition: '0.3s',
+        }}
+        hoverStyle={{
+          backgroundColor: '#0d47a1',
+        }}
+      />
+    </Box>
+  </Box>
+</Modal>
+
+<Dialog
+  open={manualEditModalOpen}
+  onClose={() => setManualEditModalOpen(false)}
+  fullWidth
+  maxWidth="sm"
+  PaperProps={{
+    sx: {
+      bgcolor: '#ffffff',
+      borderRadius: 4,
+      boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+      fontFamily: 'inherit',
+    },
+  }}
+>
+  <Box
+    sx={{
+      backgroundColor: '#ffffff',
+      color: 'black',
+      fontWeight: 700,
+      fontSize: '1.6rem',
+      borderBottom: '1px solid #e0e0e0',
+      px: 4,
+      py: 2.5,
+      textAlign: 'center',
+    }}
+  >
+    Edit Period Details
+  </Box>
+<br />
+  <DialogContent sx={{ px: 4, py: 3 }}>
+    {selectedPeriodDetails && (
+      <Grid container spacing={3}>
+        {[
+          { label: 'Subject', name: 'subject_name' },
+          { label: 'Faculty', name: 'faculty_name' },
+          { label: 'Venue', name: 'classroom' },
+        ].map((field) => (
+          <Grid item xs={12} key={field.name}>
+            <TextField
+              fullWidth
+              label={field.label}
+              name={field.name}
+              value={selectedPeriodDetails[field.name]}
+              onChange={(e) =>
+                setSelectedPeriodDetails({
+                  ...selectedPeriodDetails,
+                  [field.name]: e.target.value,
+                })
+              }
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1rem',
+                  px: 1.5,
+                  fontFamily: 'inherit',
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+                },
+                '& .MuiInputLabel-root': {
+                  fontWeight: 800,
+                  fontSize:'1.2rem',
+                  color: '#555',
+                  fontFamily: 'inherit',
+                },
+              }}
+            />
+          </Grid>
+        ))}
+
+        {[
+          { label: 'Start Time', name: 'start_time' },
+          { label: 'End Time', name: 'end_time' },
+        ].map((field) => (
+          <Grid item xs={6} key={field.name}>
+            <TextField
+              fullWidth
+              type="time"
+              label={field.label}
+              name={field.name}
+              value={selectedPeriodDetails[field.name]}
+              onChange={(e) =>
+                setSelectedPeriodDetails({
+                  ...selectedPeriodDetails,
+                  [field.name]: e.target.value,
+                })
+              }
+              InputLabelProps={{ shrink: true }}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1rem',
+                  px: 1.5,
+                  fontFamily: 'inherit',
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+                },
+                '& .MuiInputLabel-root': {
+                  fontWeight: 800,
+                     fontSize:'1.2rem',
+                  color: '#555',
+                  fontFamily: 'inherit',
+                },
+              }}
+            />
+          </Grid>
+        ))}
+      </Grid>
+    )}
+  </DialogContent>
+
+ <DialogActions sx={{ px: 4, pb: 3, pt: 2 }}>
+    <Button
+      onClick={() => setManualEditModalOpen(false)}
+      variant="outlined"
+      color="error"
+      sx={{
+        borderRadius: 2,
+        px: 3.5,
+        py: 1.2,
+        fontWeight: 600,
+        fontSize: '1rem',
+        fontFamily: 'inherit',
+        textTransform: 'none',
+        lineHeight: 1.4,
+        '&:hover': {
+          backgroundColor: '#ffe6e6',
+        },
+      }}
+    >
+      Cancel
+    </Button>
+    <Button
+      onClick={() => {
+        console.log('Saved:', selectedPeriodDetails);
+        toast.success('Period updated successfully!');
+        setManualEditModalOpen(false);
+      }}
+      variant="contained"
+      color="primary"
+      sx={{
+        borderRadius: 2,
+        px: 3.5,
+        py: 1.2,
+        fontWeight: 600,
+        fontSize: '1rem',
+        fontFamily: 'inherit',
+        textTransform: 'none',
+        lineHeight: 1.4,
+        boxShadow: '0 3px 6px rgba(0,0,0,0.1)',
+      }}
+    >
+      Save Changes
+    </Button>
+  </DialogActions>
+
+  <ToastContainer position="bottom-center" autoClose={2500} />
+</Dialog>
+
+
+
     </div>
   );
 };

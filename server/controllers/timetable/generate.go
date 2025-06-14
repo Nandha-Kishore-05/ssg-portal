@@ -165,6 +165,67 @@ func BuildFacultySubjectMap(departmentID, semesterID, academicYearID int) (map[i
 	return facultySubjectMap, nil
 }
 
+func IsLabVenueAvailable(existingTimetable map[string]map[string][]models.TimetableEntry, dayName, startTime, labVenueName string) bool {
+	// Check all faculty entries in existing timetable for the given day and time
+	for _, facultySchedule := range existingTimetable {
+		if daySchedule, exists := facultySchedule[dayName]; exists {
+			for _, entry := range daySchedule {
+				if entry.StartTime == startTime && entry.Classroom == labVenueName {
+					return false // Lab venue is already occupied
+				}
+			}
+		}
+	}
+	return true
+}
+
+func AreAllLabVenuesAvailableForAllSections(existingTimetable map[string]map[string][]models.TimetableEntry,
+	labVenuesBySubject map[int][]models.LabVenue, subjectID int, dayName, startTime1, startTime2 string,
+	sectionMap map[int]bool) bool {
+
+	if venues, exists := labVenuesBySubject[subjectID]; exists {
+
+		sections := make([]int, 0, len(sectionMap))
+		for sectionID := range sectionMap {
+			sections = append(sections, sectionID)
+		}
+		//log.Println("nikitha",sections)
+		// Check if we have enough lab venues for all sections
+		if len(venues) < len(sections) {
+			return false // Not enough lab venues for all sections
+		}
+
+		// Try to find a valid assignment of venues to sections
+		return canAssignVenuesToAllSections(existingTimetable, venues, dayName, startTime1, startTime2, sectionMap)
+	}
+	return false // No venues found for this subject
+}
+
+func canAssignVenuesToAllSections(existingTimetable map[string]map[string][]models.TimetableEntry,
+	venues []models.LabVenue, dayName, startTime1, startTime2 string, sectionMap map[int]bool) bool {
+
+	// For simplicity, we'll use a greedy approach
+	// In practice, you might want to use a more sophisticated matching algorithm
+	sections := make([]int, 0, len(sectionMap))
+	for sectionID := range sectionMap {
+		sections = append(sections, sectionID)
+	}
+	availableVenues := make([]models.LabVenue, 0)
+
+	// Find all venues that are completely free for both time slots
+	for _, venue := range venues {
+		if IsLabVenueAvailable(existingTimetable, dayName, startTime1, venue.LabVenue) &&
+			IsLabVenueAvailable(existingTimetable, dayName, startTime2, venue.LabVenue) {
+			availableVenues = append(availableVenues, venue)
+		}
+	}
+
+	result := len(availableVenues) >= len(sections)
+
+	// Check if we have enough available venues for all sections
+	return result
+}
+
 func GenerateTimetable(
 	days []models.Day,
 	//workingDays []models.WorkingDay,
@@ -191,7 +252,22 @@ func GenerateTimetable(
 			sectionsInSameSemester = append(sectionsInSameSemester, section)
 		}
 	}
+	for _, section := range sections {
+		log.Printf("Section: ID=%d | DepartmentID=%d (%T), SemesterID=%d (%T), AcademicYear=%v (%T)",
+			section.ID,
+			section.DepartmentID, section.DepartmentID,
+			section.SemesterID, section.SemesterID,
+			section.AcademicYear, section.AcademicYear,
+		)
 
+		log.Printf("Expected: DepartmentID=%d (%T), SemesterID=%d (%T), AcademicYearID=%d (%T)",
+			departmentID, departmentID,
+			semesterID, semesterID,
+			academicYearID, academicYearID,
+		)
+	}
+
+	log.Println("sectionsInSameSemester", sectionsInSameSemester)
 	existingTimetable, err := FetchExistingTimetable(academicYearID)
 	if err != nil {
 		fmt.Println("Error fetching existing timetable:", err)
@@ -204,13 +280,11 @@ func GenerateTimetable(
 
 	// Fetch any one section ID
 	var existingSectionID int
-
 	sectionQuery := `
 	SELECT section_id FROM timetable 
 	WHERE department_id = ? AND semester_id = ? AND academic_year = ?
 	LIMIT 1
 `
-
 	err = config.Database.QueryRow(sectionQuery, departmentID, semesterID, academicYearID).Scan(&existingSectionID)
 
 	if err == sql.ErrNoRows {
@@ -218,28 +292,31 @@ func GenerateTimetable(
 		existingSectionID = 0
 	} else if err != nil {
 		log.Println("Error fetching section:", err)
-
 	}
 
-	// Check if sectionsInSameSemester has elements before accessing index 0
 	if existingSectionID == 0 {
 		log.Println("kishore")
-		// Fetch the existing timetable and handle errors
+
+		// Pre-build all data structures (same as before)
 		existingTimetable, err := FetchExistingTimetable(academicYearID)
 		if err != nil {
 			fmt.Println("Error fetching existing timetable:", err)
 			return nil
 		}
 
-		// Precompute faculty availability once
+		skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
+		if err != nil {
+			fmt.Println("Error fetching timetable skips:", err)
+			return nil
+		}
+
 		allFacultyNames := make([]string, 0, len(faculty))
 		for _, f := range faculty {
 			allFacultyNames = append(allFacultyNames, f.FacultyName)
 		}
-		log.Println("fac", len(allFacultyNames))
+
 		facultyAvailabilityCache := PrecomputeFacultyAvailability(existingTimetable, allFacultyNames)
 
-		// Build maps once
 		sectionMap, err := BuildSectionMap(departmentID, semesterID, academicYearID)
 		if err != nil {
 			log.Println("Error building section map:", err)
@@ -252,26 +329,17 @@ func GenerateTimetable(
 			return nil
 		}
 
-		// Fetch other required data
 		labVenues, err := lab.GetLabVenue()
 		if err != nil {
 			fmt.Println("Error fetching lab venues:", err)
 			return nil
 		}
 
-		skipTimetable, err := FetchTimetableSkips(departmentID, semesterID, academicYearID, sectionID)
-		if err != nil {
-			fmt.Println("Error fetching timetable skips:", err)
-			return nil
-		}
-
-		// Precompute classroom assignments by department
 		classroomsByDept := make(map[int][]models.Classroom)
 		for _, cls := range classrooms {
 			classroomsByDept[cls.DepartmentID] = append(classroomsByDept[cls.DepartmentID], cls)
 		}
 
-		// Precompute faculty for subjects and sections
 		facultyForSubjectSection := make(map[int]map[int][]models.Faculty)
 		for _, fs := range facultySubjects {
 			if fs.DepartmentID == departmentID && fs.SemesterID == semesterID &&
@@ -291,7 +359,36 @@ func GenerateTimetable(
 			}
 		}
 
-		// Try to generate a valid timetable with retry logic
+		// Define the exact allowed lab slot pairs
+		allowedLabPairs := [][2]string{
+			{"08:45:00", "09:35:00"}, // 1st & 2nd periods
+			{"10:40:00", "11:30:00"}, // 3rd & 4th periods
+			{"13:30:00", "14:20:00"}, // 5th & 6th periods
+		}
+
+		// Pre-find all valid consecutive slot pairs for labs
+		labSlots := make(map[string][][2]string)
+		for _, day := range days {
+			for _, pair := range allowedLabPairs {
+				slot1 := pair[0]
+				slot2 := pair[1]
+
+				// Check if both slots are free
+				free1 := IsLabPeriodAvailable(existingTimetable, day.DayName, slot1, "")
+				free2 := IsLabPeriodAvailable(existingTimetable, day.DayName, slot2, "")
+
+				if free1 && free2 {
+					labSlots[day.DayName] = append(labSlots[day.DayName], [2]string{slot1, slot2})
+				}
+			}
+		}
+
+		labVenuesBySubject := make(map[int][]models.LabVenue)
+		for _, labVenue := range labVenues {
+			labVenuesBySubject[labVenue.SubjectID] = append(labVenuesBySubject[labVenue.SubjectID], labVenue)
+		}
+
+		// Limited retry with fast lab assignment
 		for {
 			timetable := make(map[string]map[string][]models.TimetableEntry)
 			subjectsAssigned := make(map[string]map[string]bool)
@@ -299,10 +396,10 @@ func GenerateTimetable(
 			status0Assignments := make(map[string]map[string]bool)
 			facultyAssignments := make(map[string]map[string]string)
 			subjectDailyCount := make(map[string]map[string]int)
-			labAssigned := make(map[string]bool)
 			labAssignedday := make(map[string]int)
+			usedLabSlots := make(map[string]map[string]bool) // Track used lab slots
 
-			// Initialize maps
+			// Initialize
 			for _, subject := range subjects {
 				periodsLeft[subject.Name] = subject.Period
 				if subject.Status == 0 {
@@ -315,9 +412,10 @@ func GenerateTimetable(
 				subjectsAssigned[day.DayName] = make(map[string]bool)
 				facultyAssignments[day.DayName] = make(map[string]string)
 				subjectDailyCount[day.DayName] = make(map[string]int)
-				labAssigned[day.DayName] = false
 				labAssignedday[day.DayName] = 0
-				// Apply timetable skips
+				usedLabSlots[day.DayName] = make(map[string]bool)
+
+				// Apply skips
 				if skips, ok := skipTimetable[day.DayName]; ok {
 					for startTime, entries := range skips {
 						for _, entry := range entries {
@@ -326,74 +424,209 @@ func GenerateTimetable(
 						}
 					}
 				}
-
 			}
 
 			rand.Seed(time.Now().UnixNano())
 
-			// Process days - this is the main optimization target
-			//	success := true
+			// FAST LAB ASSIGNMENT: Process all lab subjects first
+			labSuccess := true
+			for _, subject := range subjects {
+				if subject.Status != 0 || periodsLeft[subject.Name] <= 0 {
+					continue
+				}
+
+				sessionsNeeded := periodsLeft[subject.Name] / 2
+				labTryCount := 0
+				for session := 0; session < sessionsNeeded; session++ {
+					placed := false
+
+					// Try each day in random order
+					dayOrder := rand.Perm(len(days))
+					for _, dayIdx := range dayOrder {
+						if labTryCount >= 10 { // 🚫 Stop trying after 10 failed attempts
+							break
+						}
+						day := days[dayIdx]
+
+						if labAssignedday[day.DayName] >= 2 {
+							continue
+						}
+
+						// Try available lab slots for this day
+						if slots, exists := labSlots[day.DayName]; exists {
+							rand.Shuffle(len(slots), func(i, j int) { slots[i], slots[j] = slots[j], slots[i] })
+
+							for _, slot := range slots {
+								if labTryCount >= 10 { // 🚫 Stop trying after 10 failed attempts
+									break
+								}
+								slot1, slot2 := slot[0], slot[1]
+
+								// Check if slots are already used
+								if usedLabSlots[day.DayName][slot1] || usedLabSlots[day.DayName][slot2] {
+								
+									continue
+								}
+
+								// Quick faculty check
+								if !AreAllSubjectFacultyAvailableAcrossSectionsFast(
+									facultyAvailabilityCache, facultySubjectMap,
+									subject.ID, day.DayName, slot1, sectionMap) {
+									continue
+								}
+
+								// NEW: Check lab venue availability for both slots
+								if !AreAllLabVenuesAvailableForAllSections(existingTimetable, labVenuesBySubject,
+									subject.ID, day.DayName, slot1, slot2, sectionMap) {
+										labTryCount++
+									continue // Skip this timing if not all sections can get lab venues
+								}
+
+								// Get faculty and venue
+								var availableFaculty []models.Faculty
+								if subjectFaculty, exists := facultyForSubjectSection[subject.ID]; exists {
+									if sectionFaculty, exists := subjectFaculty[sectionID]; exists {
+										availableFaculty = sectionFaculty
+									}
+								}
+
+								if len(availableFaculty) == 0 {
+									continue
+								}
+
+								selectedFaculty := availableFaculty[rand.Intn(len(availableFaculty))]
+
+								var selectedClassroom models.Classroom
+								if venues, exists := labVenuesBySubject[subject.ID]; exists && len(venues) > 0 {
+									// Find the first available lab venue for both slots
+									var availableVenue models.LabVenue
+									found := false
+									for _, venue := range venues {
+										if IsLabVenueAvailable(existingTimetable, day.DayName, slot1, venue.LabVenue) &&
+											IsLabVenueAvailable(existingTimetable, day.DayName, slot2, venue.LabVenue) {
+											availableVenue = venue
+											found = true
+											break
+										}
+									}
+									if !found {
+										continue // No available venue found
+									}
+
+									selectedClassroom = models.Classroom{
+										ID:            availableVenue.ID,
+										ClassroomName: availableVenue.LabVenue,
+										DepartmentID:  availableVenue.DepartmentID,
+										SemesterID:    availableVenue.SemesterID,
+									}
+								}
+
+								// Find correct hour indices for slot1 and slot2
+								var slot1Index, slot2Index int = -1, -1
+								for idx, hour := range hours {
+									if hour.StartTime == slot1 {
+										slot1Index = idx
+									}
+									if hour.StartTime == slot2 {
+										slot2Index = idx
+									}
+								}
+
+								// Create entries with correct EndTime mapping
+								slots := []struct {
+									startTime string
+									endTime   string
+								}{
+									{slot1, hours[slot1Index].EndTime},
+									{slot2, hours[slot2Index].EndTime},
+								}
+
+								for _, slotInfo := range slots {
+									entry := models.TimetableEntry{
+										DayName:      day.DayName,
+										StartTime:    slotInfo.startTime,
+										EndTime:      slotInfo.endTime,
+										SubjectName:  subject.Name,
+										FacultyName:  selectedFaculty.FacultyName,
+										Classroom:    selectedClassroom.ClassroomName,
+										Status:       subject.Status,
+										SemesterID:   semesterID,
+										DepartmentID: departmentID,
+										AcademicYear: academicYearID,
+										CourseCode:   subject.CourseCode,
+										SectionID:    sectionID,
+									}
+									timetable[day.DayName][slotInfo.startTime] = append(timetable[day.DayName][slotInfo.startTime], entry)
+									usedLabSlots[day.DayName][slotInfo.startTime] = true
+								}
+
+								periodsLeft[subject.Name] -= 2
+								subjectsAssigned[day.DayName][subject.Name] = true
+								status0Assignments[subject.Name][slot1] = true
+								status0Assignments[subject.Name][slot2] = true
+								facultyAssignments[day.DayName][selectedFaculty.FacultyName] = slot2
+								subjectDailyCount[day.DayName][subject.Name] += 2
+								labAssignedday[day.DayName]++
+									labTryCount = 0
+								placed = true
+								break
+							}
+						}
+
+						if placed {
+							break
+						}
+					}
+
+					if !placed {
+						labSuccess = false
+						break
+					}
+				}
+
+				if !labSuccess {
+					break
+				}
+			}
+
+			if !labSuccess {
+				continue // Retry
+			}
+
+			// REGULAR SUBJECT ASSIGNMENT (same logic as before but simplified)
 			for _, day := range days {
 				for i := 0; i < len(hours); i++ {
-					hourIndex := i % len(hours)
-					startTime := hours[hourIndex].StartTime
+					startTime := hours[i].StartTime
 
-					// Skip if already assigned or in skip list
 					if _, exists := timetable[day.DayName][startTime]; exists && len(timetable[day.DayName][startTime]) > 0 {
 						continue
 					}
 
-					// Filter eligible subjects - precompute once per slot
+					// Find eligible regular subjects
 					var eligibleSubjects []models.Subject
 					for _, subject := range subjects {
-						// Check basic eligibility
-						dailyLimit := 4
-						if subject.Status != 0 {
-							dailyLimit = 1
-						}
-
-						if periodsLeft[subject.Name] <= 0 ||
-							subjectDailyCount[day.DayName][subject.Name] >= dailyLimit ||
-							(subjectsAssigned[day.DayName][subject.Name] &&
-								(subject.Status == 1 || (subject.Status == 0 && len(status0Assignments[subject.Name]) > 0))) {
+						if subject.Status == 0 || periodsLeft[subject.Name] <= 0 ||
+							subjectsAssigned[day.DayName][subject.Name] {
 							continue
 						}
 
-						// Lab-specific checks
-						// if subject.Status == 0 && labAssigned[day.DayName] {
-						// 	continue
-						// }
-						if subject.Status == 0 && labAssignedday[day.DayName] >= 2 {
-							continue
-						}
-
-						// Check faculty availability using cache
 						if !AreAllSubjectFacultyAvailableAcrossSectionsFast(
-							facultyAvailabilityCache,
-							facultySubjectMap,
-							subject.ID,
-							day.DayName,
-							startTime,
-							sectionMap) {
+							facultyAvailabilityCache, facultySubjectMap,
+							subject.ID, day.DayName, startTime, sectionMap) {
 							continue
 						}
 
-						// Verify classroom availability
 						if len(classroomsByDept[subject.DepartmentID]) > 0 {
 							eligibleSubjects = append(eligibleSubjects, subject)
 						}
 					}
 
-					// No eligible subjects for this slot
 					if len(eligibleSubjects) == 0 {
 						continue
 					}
 
-					// Pick a random subject
 					subject := eligibleSubjects[rand.Intn(len(eligibleSubjects))]
-					endTime := hours[hourIndex].EndTime
 
-					// Get available faculty for this subject and section
 					var availableFaculty []models.Faculty
 					if subjectFaculty, exists := facultyForSubjectSection[subject.ID]; exists {
 						if sectionFaculty, exists := subjectFaculty[sectionID]; exists {
@@ -405,49 +638,21 @@ func GenerateTimetable(
 						continue
 					}
 
-					// Pick a random faculty
 					selectedFaculty := availableFaculty[rand.Intn(len(availableFaculty))]
 
-					// Check faculty schedule conflict
 					if assignedTime, exists := facultyAssignments[day.DayName][selectedFaculty.FacultyName]; exists && assignedTime == startTime {
 						continue
 					}
 
-					labVenuesBySubject := make(map[int][]models.LabVenue)
-					for _, labVenue := range labVenues {
-						labVenuesBySubject[labVenue.SubjectID] = append(labVenuesBySubject[labVenue.SubjectID], labVenue)
-					}
-
-					// Select classroom (lab or regular)
 					var selectedClassroom models.Classroom
-					if subject.Status == 0 && len(labVenues) > 0 {
-						// Filter lab venues that match the current subject ID
-						var matchingLabVenues []models.LabVenue // Assuming LabVenue is the correct type
-						for _, labVenue := range labVenues {
-							if labVenue.SubjectID == subject.ID { // Check if lab venue is mapped to current subject
-								matchingLabVenues = append(matchingLabVenues, labVenue)
-							}
-						}
-
-						// Only assign if there are matching lab venues for this subject
-						if len(matchingLabVenues) > 0 {
-							selectedLabVenue := matchingLabVenues[rand.Intn(len(matchingLabVenues))]
-							selectedClassroom = models.Classroom{
-								ID:            selectedLabVenue.ID,
-								ClassroomName: selectedLabVenue.LabVenue,
-								DepartmentID:  selectedLabVenue.DepartmentID,
-								SemesterID:    selectedLabVenue.SemesterID,
-							}
-						}
-					} else if len(classroomsByDept[subject.DepartmentID]) > 0 {
+					if len(classroomsByDept[subject.DepartmentID]) > 0 {
 						selectedClassroom = classroomsByDept[subject.DepartmentID][rand.Intn(len(classroomsByDept[subject.DepartmentID]))]
 					}
 
-					// Create the timetable entry
 					entry := models.TimetableEntry{
 						DayName:      day.DayName,
 						StartTime:    startTime,
-						EndTime:      endTime,
+						EndTime:      hours[i].EndTime,
 						SubjectName:  subject.Name,
 						FacultyName:  selectedFaculty.FacultyName,
 						Classroom:    selectedClassroom.ClassroomName,
@@ -459,54 +664,19 @@ func GenerateTimetable(
 						SectionID:    sectionID,
 					}
 
-					// Handle lab subjects (which need two consecutive slots)
-					if subject.Status == 0 {
-						if i < len(hours)-1 {
-							nextHourIndex := (hourIndex + 1) % len(hours)
-							nextStartTime := hours[nextHourIndex].StartTime
-
-							// Check availability of next slot
-							if IsLabPeriodAvailable(existingTimetable, day.DayName, nextStartTime, "") {
-								entry2 := entry
-								entry2.StartTime = nextStartTime
-								entry2.EndTime = hours[nextHourIndex].EndTime
-
-								// Assign both slots
-								timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
-								timetable[day.DayName][nextStartTime] = append(timetable[day.DayName][nextStartTime], entry2)
-
-								// Update tracking information
-								periodsLeft[subject.Name] -= 2
-								subjectsAssigned[day.DayName][subject.Name] = true
-								status0Assignments[subject.Name][startTime] = true
-								status0Assignments[subject.Name][nextStartTime] = true
-								facultyAssignments[day.DayName][selectedFaculty.FacultyName] = nextStartTime
-								subjectDailyCount[day.DayName][subject.Name] += 2
-								labAssigned[day.DayName] = true
-								labAssignedday[day.DayName]++
-							} else {
-								continue // Can't assign lab here
-							}
-						} else {
-							continue // Not enough slots left for lab
-						}
-					} else {
-						// Regular subject assignment
-						timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
-						periodsLeft[subject.Name]--
-						subjectDailyCount[day.DayName][subject.Name]++
-						subjectsAssigned[day.DayName][subject.Name] = true
-						facultyAssignments[day.DayName][selectedFaculty.FacultyName] = startTime
-					}
+					timetable[day.DayName][startTime] = append(timetable[day.DayName][startTime], entry)
+					periodsLeft[subject.Name]--
+					subjectDailyCount[day.DayName][subject.Name]++
+					subjectsAssigned[day.DayName][subject.Name] = true
+					facultyAssignments[day.DayName][selectedFaculty.FacultyName] = startTime
 				}
 			}
 
-			// Check if all subjects were fully assigned
+			// Check completion
 			allAssigned := true
 			for _, remaining := range periodsLeft {
 				if remaining > 0 {
 					allAssigned = false
-					//log.Printf("Subject %s has %d periods left unassigned\n", subjectName, remaining)
 					break
 				}
 			}
@@ -515,6 +685,9 @@ func GenerateTimetable(
 				return timetable
 			}
 		}
+
+		//log.Println("Warning: Could not assign all periods within retry limit")
+		return nil
 
 	} else {
 		// For sections other than the first, get the section ID to use as reference
